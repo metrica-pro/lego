@@ -60,11 +60,6 @@ func (c *Challenge) Solve(ctx context.Context, authz acme.Authorization) error {
 		return errors.New("dnspersist01: empty identifier")
 	}
 
-	accountURI := c.core.GetKid()
-	if accountURI == "" {
-		return errors.New("dnspersist01: ACME account URI cannot be empty")
-	}
-
 	log.Info("dnspersist01: trying to solve the challenge.", log.DomainAttr(domain))
 
 	chlng, err := challenge.FindChallenge(challenge.DNSPersist01, authz)
@@ -72,31 +67,35 @@ func (c *Challenge) Solve(ctx context.Context, authz acme.Authorization) error {
 		return err
 	}
 
+	if chlng.AccountURI == "" {
+		return errors.New("dnspersist01: missing accounturi in challenge object")
+	}
+
 	err = validateIssuerDomainNames(chlng)
 	if err != nil {
 		return fmt.Errorf("dnspersist01: %w", err)
 	}
 
-	fqdn := getAuthorizationDomainName(domain)
+	fqdn := getValidationDomainName(domain)
 
 	result, err := DefaultClient().LookupTXT(ctx, fqdn)
 	if err != nil {
 		return fmt.Errorf("dnspersist01: %w", err)
 	}
 
-	issuerDomainName, err := c.selectIssuerDomainName(chlng.IssuerDomainNames, result.Records, accountURI, authz.Wildcard)
+	issuerDomainName, err := c.selectIssuerDomainName(chlng.IssuerDomainNames, result.Records, chlng.AccountURI, authz.Wildcard)
 	if err != nil {
 		return fmt.Errorf("dnspersist01: %w", err)
 	}
 
 	matcher := func(records []TXTRecord) bool {
-		return c.hasMatchingRecord(records, issuerDomainName, accountURI, authz.Wildcard)
+		return c.hasMatchingRecord(records, issuerDomainName, chlng.AccountURI, authz.Wildcard)
 	}
 
 	if !matcher(result.Records) {
 		var info ChallengeInfo
 
-		info, err = GetChallengeInfo(authz, issuerDomainName, accountURI, c.persistUntil)
+		info, err = GetChallengeInfo(authz, issuerDomainName, chlng.AccountURI, c.persistUntil)
 		if err != nil {
 			return err
 		}
@@ -194,7 +193,7 @@ func (c *Challenge) hasMatchingRecord(records []TXTRecord, issuerDomainName, acc
 
 // ChallengeInfo contains the information used to create a dns-persist-01 TXT record.
 type ChallengeInfo struct {
-	// FQDN is the full-qualified challenge domain (i.e. `_validation-persist.[domain].`).
+	// FQDN is the Validation Domain Name (i.e. `_validation-persist.[domain].`).
 	FQDN string
 
 	// Value contains the TXT record value, an RFC 8659 issue-value.
@@ -219,14 +218,14 @@ func GetChallengeInfo(authz acme.Authorization, issuerDomainName, accountURI str
 	}
 
 	return ChallengeInfo{
-		FQDN:             getAuthorizationDomainName(authz.Identifier.Value),
+		FQDN:             getValidationDomainName(authz.Identifier.Value),
 		Value:            value,
 		IssuerDomainName: issuerDomainName,
 	}, nil
 }
 
-// getAuthorizationDomainName returns the fully qualified DNS label
-// used by the dns-persist-01 challenge for the given domain.
-func getAuthorizationDomainName(domain string) string {
+// getValidationDomainName returns the Validation Domain Name the fully qualified
+// DNS label at which the dns-persist-01 TXT record is provisioned for the given domain.
+func getValidationDomainName(domain string) string {
 	return dns.Fqdn(validationLabel + "." + domain)
 }

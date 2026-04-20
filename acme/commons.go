@@ -292,9 +292,14 @@ type Challenge struct {
 	// https://www.rfc-editor.org/rfc/rfc8555.html#section-8.4
 	Token string `json:"token"`
 
+	// accounturi (required for dns-persist-01, string):
+	// A URI identifying the ACME account requesting validation.
+	// https://www.ietf.org/archive/id/draft-ietf-acme-dns-persist-01.html#section-3.1
+	AccountURI string `json:"accounturi,omitempty"`
+
 	// issuer-domain-names (required for dns-persist-01, []string):
-	// A list of Issuer Domain Names used for dns-persist-01 challenges.
-	// https://www.ietf.org/archive/id/draft-ietf-acme-dns-persist-00.html#section-3.1
+	// A list of one or more Issuer Domain Names.
+	// https://www.ietf.org/archive/id/draft-ietf-acme-dns-persist-01.html#section-3.1
 	IssuerDomainNames []string `json:"issuer-domain-names,omitempty"`
 
 	// https://www.rfc-editor.org/rfc/rfc8555.html#section-8.1
