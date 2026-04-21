@@ -7,7 +7,7 @@ body:
     attributes:
       label: Welcome
       options:
-        - label: Yes, I'm using a binary release or the library within the two latest releases.
+        - label: Yes, I'm using a binary release or the library within the [two latest releases](https://github.com/go-acme/lego/releases).
           required: true
         - label: Yes, I've searched for similar issues on GitHub and didn't find any.
           required: true
@@ -52,6 +52,7 @@ body:
     attributes:
       label: Effective version of lego
       description: "`latest` or `dev` are NOT effective versions."
+      placeholder: "e.g. v4.21.0"
     validations:
       required: true
 
@@ -103,11 +104,11 @@ body:
     id: go-env
     attributes:
       label: Go environment (if applicable)
+      description: "Paste the output of `go version && go env` here."
       value: |-
         <details>
 
         ```console
-        $ go version && go env
         # paste output here
         ```
 
