@@ -6,7 +6,7 @@ git reset --hard upstream/main
 MIN_GO=$(go mod edit -json | jq -r .Go)
 LOG_FILE="modupwiz_bump.log"
 
-rm "$LOG_FILE"
+rm -f "$LOG_FILE"
 
 # Check if the min Go version changed after go mod tidy.
 # If unchanged, commit with the given message.
