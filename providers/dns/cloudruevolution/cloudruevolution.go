@@ -180,6 +180,30 @@ func (d *DNSProvider) Present(ctx context.Context, domain, token, keyAuth string
 	return d.presentForZone(ctx, authZone, info, token)
 }
 
+// PresentRecord publishes a pre-computed TXT value at fqdn.
+//
+// Use this when the caller already has the rendered TXT value (e.g. a
+// cert-manager external webhook that receives base64url(sha256(keyAuth)) in
+// the ChallengeRequest) and must NOT have the value re-hashed by lego's
+// dns01.GetChallengeInfo. The token argument is the per-challenge key used to
+// remember the resulting recordID so CleanUpRecord can drop the right entry —
+// in webhook contexts where the provider is recreated per call, supplying
+// value itself as the token is a safe default (CleanUpRecord falls back to a
+// zone-wide lookup when the in-memory state is missing).
+//
+// fqdn must be the fully-qualified record name, including the trailing dot,
+// e.g. "_acme-challenge.example.com.".
+func (d *DNSProvider) PresentRecord(ctx context.Context, fqdn, value, token string) error {
+	authZone, err := dns01.DefaultClient().FindZoneByFqdn(ctx, fqdn)
+	if err != nil {
+		return fmt.Errorf("cloudruevolution: could not find zone for fqdn %q: %w", fqdn, err)
+	}
+
+	info := dns01.ChallengeInfo{EffectiveFQDN: fqdn, Value: value}
+
+	return d.presentForZone(ctx, authZone, info, token)
+}
+
 // presentForZone is the testable core of Present — everything after the
 // dns01 SOA discovery has produced authZone. The split exists so unit tests
 // can drive the API surface without relying on the live DNS resolver.
@@ -303,6 +327,20 @@ func (d *DNSProvider) CleanUp(ctx context.Context, domain, token, keyAuth string
 	if err != nil {
 		return fmt.Errorf("cloudruevolution: could not find zone for domain %q: %w", domain, err)
 	}
+
+	return d.cleanupForZone(ctx, authZone, info, token)
+}
+
+// CleanUpRecord is the counterpart to PresentRecord: it removes the TXT value
+// previously published with PresentRecord. See the PresentRecord docs for the
+// expected fqdn/value/token semantics.
+func (d *DNSProvider) CleanUpRecord(ctx context.Context, fqdn, value, token string) error {
+	authZone, err := dns01.DefaultClient().FindZoneByFqdn(ctx, fqdn)
+	if err != nil {
+		return fmt.Errorf("cloudruevolution: could not find zone for fqdn %q: %w", fqdn, err)
+	}
+
+	info := dns01.ChallengeInfo{EffectiveFQDN: fqdn, Value: value}
 
 	return d.cleanupForZone(ctx, authZone, info, token)
 }
