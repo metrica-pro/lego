@@ -3,6 +3,24 @@
   <p>Automatic Certificates and HTTPS for everyone.</p>
 </div>
 
+# Lego — metrica-pro fork
+
+> **This is the `metrica-pro/lego` fork.** It tracks upstream
+> [`go-acme/lego`](https://github.com/go-acme/lego) and adds one extra DNS-01
+> provider: [`cloudruevolution`](providers/dns/cloudruevolution/) — Cloud.ru
+> Evolution DNS public-zone API support, distinct from the legacy `cloudru`
+> provider that targets the older `console.cloud.ru/api/clouddns` endpoint.
+>
+> | Resource | Location |
+> |---|---|
+> | Provider source | [`providers/dns/cloudruevolution/`](providers/dns/cloudruevolution/) |
+> | Usage / CLI examples | [`providers/dns/cloudruevolution/USAGE.md`](providers/dns/cloudruevolution/USAGE.md) |
+> | SDD spec & deployment guide | [`specs/001-cloudruevolution-provider/`](specs/001-cloudruevolution-provider/) |
+> | Container image | `ghcr.io/metrica-pro/lego` (tagged `v5.1.0`, `5.1`, `5`, `latest`) |
+> | Release workflow | [`.github/workflows/fork-release.yml`](.github/workflows/fork-release.yml) |
+>
+> Everything below this banner is the upstream README and applies unchanged.
+
 # Lego
 
 [ACME](https://www.rfc-editor.org/rfc/rfc8555.html) client and library for Let's Encrypt and other ACME CAs written in Go.
