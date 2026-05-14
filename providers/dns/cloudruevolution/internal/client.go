@@ -30,6 +30,8 @@ type Client struct {
 	apiBaseURL *url.URL
 	projectID  string
 
+	zones *zoneCache
+
 	// OperationPollInterval and OperationTimeout govern WaitForOperation.
 	OperationPollInterval time.Duration
 	OperationTimeout      time.Duration
@@ -59,6 +61,7 @@ func NewClient(keyID, secret, projectID, apiEndpoint, authEndpoint string) (*Cli
 		identity:              newIdentity(keyID, secret, authURL, httpClient),
 		apiBaseURL:            apiURL,
 		projectID:             projectID,
+		zones:                 newZoneCache(),
 		OperationPollInterval: DefaultOperationPollInterval,
 		OperationTimeout:      DefaultOperationTimeout,
 	}, nil
