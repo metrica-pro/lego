@@ -249,6 +249,69 @@ func TestClient_WaitForOperation_Timeout(t *testing.T) {
 	assert.Contains(t, err.Error(), "time limit exceeded")
 }
 
+func TestClient_GetRecord(t *testing.T) {
+	c, mux := newFakeServerMux(t)
+	mux.HandleFunc("/v1/publicRecordsSole/rec-42", func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodGet, r.Method)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(PublicRecord{
+			ID: "rec-42", Name: "_acme-challenge", Type: "txt",
+			Values: []string{"a", "b"}, TTL: 60,
+		})
+	})
+
+	got, err := c.GetRecord(t.Context(), "rec-42")
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	assert.Equal(t, "rec-42", got.ID)
+	assert.Equal(t, []string{"a", "b"}, got.Values)
+}
+
+func TestClient_GetRecord_NotFound(t *testing.T) {
+	c, mux := newFakeServerMux(t)
+	mux.HandleFunc("/v1/publicRecordsSole/missing", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte(`{"code":9,"message":"precondition"}`))
+	})
+
+	_, err := c.GetRecord(t.Context(), "missing")
+	require.Error(t, err)
+	assert.True(t, IsNotFound(err))
+}
+
+func TestClient_UpdateRecordAndWait_WaitsForDone(t *testing.T) {
+	c, mux := newFakeServerMux(t)
+	tightTimingsClient(c)
+
+	mux.HandleFunc("/v1/publicRecordsSole/rec-up", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(Operation{ID: "op-up", ResourceID: "rec-up", Done: false})
+	})
+	mux.HandleFunc("/v1/operations/op-up", func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(Operation{ID: "op-up", ResourceID: "rec-up", Done: true})
+	})
+
+	require.NoError(t, c.UpdateRecordAndWait(t.Context(), "rec-up",
+		UpdateRecordRequest{Values: []string{"v1", "v2"}, TTL: 60}))
+}
+
+func TestClient_UpdateRecordAndWait_PropagatesError(t *testing.T) {
+	c, mux := newFakeServerMux(t)
+	tightTimingsClient(c)
+
+	mux.HandleFunc("/v1/publicRecordsSole/rec-up", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"code":3,"message":"invalid argument"}`))
+	})
+
+	err := c.UpdateRecordAndWait(t.Context(), "rec-up",
+		UpdateRecordRequest{Values: []string{"v"}, TTL: 60})
+	require.Error(t, err)
+}
+
 func TestClient_CreateRecordAndWait_ReturnsResourceID(t *testing.T) {
 	c, mux := newFakeServerMux(t)
 	tightTimingsClient(c)

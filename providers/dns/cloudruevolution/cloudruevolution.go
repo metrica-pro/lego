@@ -172,6 +172,13 @@ func (d *DNSProvider) Present(ctx context.Context, domain, token, keyAuth string
 		return fmt.Errorf("cloudruevolution: could not find zone for domain %q: %w", domain, err)
 	}
 
+	return d.presentForZone(ctx, authZone, info, token)
+}
+
+// presentForZone is the testable core of Present — everything after the
+// dns01 SOA discovery has produced authZone. The split exists so unit tests
+// can drive the API surface without relying on the live DNS resolver.
+func (d *DNSProvider) presentForZone(ctx context.Context, authZone string, info dns01.ChallengeInfo, token string) error {
 	zone, err := d.client.FindZoneByDomain(ctx, authZone)
 	if err != nil {
 		return fmt.Errorf("cloudruevolution: lookup zone for %q: %w", authZone, err)
@@ -261,6 +268,11 @@ func (d *DNSProvider) CleanUp(ctx context.Context, domain, token, keyAuth string
 		return fmt.Errorf("cloudruevolution: could not find zone for domain %q: %w", domain, err)
 	}
 
+	return d.cleanupForZone(ctx, authZone, info, token)
+}
+
+// cleanupForZone is the testable counterpart to presentForZone.
+func (d *DNSProvider) cleanupForZone(ctx context.Context, authZone string, info dns01.ChallengeInfo, token string) error {
 	zone, err := d.client.FindZoneByDomain(ctx, authZone)
 	if err != nil {
 		return fmt.Errorf("cloudruevolution: lookup zone for %q: %w", authZone, err)
