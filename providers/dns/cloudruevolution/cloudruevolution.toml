@@ -2,7 +2,7 @@ Name = "Cloud.ru Evolution DNS"
 Description = '''Cloud.ru Evolution DNS public-zone provider (https://dns.api.cloud.ru). Use this for new Evolution DNS deployments; the legacy `cloudru` provider targets the older console.cloud.ru/api/clouddns API.'''
 URL = "https://cloud.ru/products/evolution-dns"
 Code = "cloudruevolution"
-Since = "v5.x"
+Since = "v5.1.0"
 
 Example = '''
 CLOUDRU_EVOLUTION_KEY_ID=xxx \
@@ -19,9 +19,10 @@ lego --email you@example.com --dns cloudruevolution -d '*.example.com' -d exampl
   [Configuration.Additional]
     CLOUDRU_EVOLUTION_POLLING_INTERVAL = "Time between DNS propagation checks in seconds (Default: 5)"
     CLOUDRU_EVOLUTION_PROPAGATION_TIMEOUT = "Maximum waiting time for DNS propagation in seconds (Default: 300)"
+    CLOUDRU_EVOLUTION_SEQUENCE_INTERVAL = "Time between sequential DNS-01 challenges in seconds (Default: 60)"
     CLOUDRU_EVOLUTION_TTL = "The TTL of the TXT record used for the DNS challenge in seconds (Default: 120)"
     CLOUDRU_EVOLUTION_HTTP_TIMEOUT = "API request timeout in seconds (Default: 30)"
-    CLOUDRU_EVOLUTION_OPERATION_TIMEOUT = "Maximum waiting time for async API operations in seconds (Default: 120)"
+    CLOUDRU_EVOLUTION_OPERATION_TIMEOUT = "Maximum waiting time for async API operations in seconds (Default: 300)"
     CLOUDRU_EVOLUTION_API_ENDPOINT = "Override the DNS API base URL (Default: https://dns.api.cloud.ru)"
     CLOUDRU_EVOLUTION_AUTH_ENDPOINT = "Override the IAM token endpoint (Default: https://iam.api.cloud.ru/api/v1/auth/token)"
 

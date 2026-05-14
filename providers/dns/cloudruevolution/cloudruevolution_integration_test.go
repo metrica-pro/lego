@@ -4,6 +4,7 @@ package cloudruevolution
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"strings"
 	"testing"
@@ -38,7 +39,9 @@ func TestLivePresentCleanUp(t *testing.T) {
 	provider, err := NewDNSProvider()
 	require.NoError(t, err)
 
-	const keyAuth = "lego-cloudruevolution-integration-test"
+	// Distinct value per run prevents parallel CI runs (or rerun of an
+	// aborted previous run) from colliding on the same TXT entry.
+	keyAuth := fmt.Sprintf("lego-cloudruevolution-integration-%d", time.Now().UnixNano())
 
 	t.Run("Present", func(t *testing.T) {
 		require.NoError(t, provider.Present(t.Context(), domain, "", keyAuth))

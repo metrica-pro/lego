@@ -4,7 +4,7 @@ date: 2019-03-03T16:39:46+01:00
 draft: false
 slug: cloudruevolution
 dnsprovider:
-  since:    "v5.x"
+  since:    "v5.1.0"
   code:     "cloudruevolution"
   url:      "https://cloud.ru/products/evolution-dns"
 ---
@@ -19,7 +19,7 @@ Cloud.ru Evolution DNS public-zone provider (https://dns.api.cloud.ru). Use this
 <!--more-->
 
 - Code: `cloudruevolution`
-- Since: v5.x
+- Since: v5.1.0
 
 
 Here is an example bash command using the Cloud.ru Evolution DNS provider:
@@ -53,9 +53,10 @@ More information [here]({{% ref "dns#configuration-and-credentials" %}}).
 | `CLOUDRU_EVOLUTION_API_ENDPOINT` | Override the DNS API base URL (Default: https://dns.api.cloud.ru) |
 | `CLOUDRU_EVOLUTION_AUTH_ENDPOINT` | Override the IAM token endpoint (Default: https://iam.api.cloud.ru/api/v1/auth/token) |
 | `CLOUDRU_EVOLUTION_HTTP_TIMEOUT` | API request timeout in seconds (Default: 30) |
-| `CLOUDRU_EVOLUTION_OPERATION_TIMEOUT` | Maximum waiting time for async API operations in seconds (Default: 120) |
+| `CLOUDRU_EVOLUTION_OPERATION_TIMEOUT` | Maximum waiting time for async API operations in seconds (Default: 300) |
 | `CLOUDRU_EVOLUTION_POLLING_INTERVAL` | Time between DNS propagation checks in seconds (Default: 5) |
 | `CLOUDRU_EVOLUTION_PROPAGATION_TIMEOUT` | Maximum waiting time for DNS propagation in seconds (Default: 300) |
+| `CLOUDRU_EVOLUTION_SEQUENCE_INTERVAL` | Time between sequential DNS-01 challenges in seconds (Default: 60) |
 | `CLOUDRU_EVOLUTION_TTL` | The TTL of the TXT record used for the DNS challenge in seconds (Default: 120) |
 
 The environment variable names can be suffixed by `_FILE` to reference a file instead of a value.

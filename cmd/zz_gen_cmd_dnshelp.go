@@ -874,7 +874,7 @@ func displayDNSHelp(w io.Writer, name string) error {
 		// generated from: providers/dns/cloudruevolution/cloudruevolution.toml
 		ew.writeln(`Configuration for Cloud.ru Evolution DNS.`)
 		ew.writeln(`Code:	'cloudruevolution'`)
-		ew.writeln(`Since:	'v5.x'`)
+		ew.writeln(`Since:	'v5.1.0'`)
 		ew.writeln()
 
 		ew.writeln(`Credentials:`)
@@ -887,9 +887,10 @@ func displayDNSHelp(w io.Writer, name string) error {
 		ew.writeln(`	- "CLOUDRU_EVOLUTION_API_ENDPOINT":	Override the DNS API base URL (Default: https://dns.api.cloud.ru)`)
 		ew.writeln(`	- "CLOUDRU_EVOLUTION_AUTH_ENDPOINT":	Override the IAM token endpoint (Default: https://iam.api.cloud.ru/api/v1/auth/token)`)
 		ew.writeln(`	- "CLOUDRU_EVOLUTION_HTTP_TIMEOUT":	API request timeout in seconds (Default: 30)`)
-		ew.writeln(`	- "CLOUDRU_EVOLUTION_OPERATION_TIMEOUT":	Maximum waiting time for async API operations in seconds (Default: 120)`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_OPERATION_TIMEOUT":	Maximum waiting time for async API operations in seconds (Default: 300)`)
 		ew.writeln(`	- "CLOUDRU_EVOLUTION_POLLING_INTERVAL":	Time between DNS propagation checks in seconds (Default: 5)`)
 		ew.writeln(`	- "CLOUDRU_EVOLUTION_PROPAGATION_TIMEOUT":	Maximum waiting time for DNS propagation in seconds (Default: 300)`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_SEQUENCE_INTERVAL":	Time between sequential DNS-01 challenges in seconds (Default: 60)`)
 		ew.writeln(`	- "CLOUDRU_EVOLUTION_TTL":	The TTL of the TXT record used for the DNS challenge in seconds (Default: 120)`)
 
 		ew.writeln()

@@ -97,17 +97,13 @@ func (c *Client) FindZoneByDomain(ctx context.Context, domain string) (*PublicZo
 		return nil, err
 	}
 
-	wanted := normalizeDomain(domain)
-
+	// Cache the entire result set, not just the match — projects with many
+	// zones should pay the list cost once.
 	for i := range zones {
-		z := &zones[i]
-		if normalizeDomain(z.Domain) == wanted || normalizeDomain(z.Name) == wanted {
-			c.zones.put(z)
-			return z, nil
-		}
+		c.zones.put(&zones[i])
 	}
 
-	return nil, nil
+	return c.zones.get(domain), nil
 }
 
 // InvalidateZoneCache drops the memoised zone lookups. Useful after a manual

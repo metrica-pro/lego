@@ -22,6 +22,19 @@ func (t *Token) Valid(threshold time.Duration) bool {
 	return t != nil && t.AccessToken != "" && time.Until(t.ExpiresAt) > threshold
 }
 
+// usableThreshold reports whether the token is still safe to use, using a
+// refresh margin that scales down for short-lived tokens. Returns false for
+// any token that should be refreshed proactively.
+func (t *Token) usableThreshold() bool {
+	if t == nil || t.AccessToken == "" {
+		return false
+	}
+
+	threshold := refreshThresholdFor(time.Duration(t.ExpiresIn) * time.Second)
+
+	return time.Until(t.ExpiresAt) > threshold
+}
+
 // AuthRequest is the JSON body sent to the IAM token endpoint.
 type AuthRequest struct {
 	KeyID  string `json:"keyId"`

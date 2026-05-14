@@ -9,23 +9,31 @@ import (
 func TestRelativeName(t *testing.T) {
 	cases := []struct {
 		fqdn, zone, want string
+		wantErr          bool
 	}{
 		// apex challenge: _acme-challenge.example.com. on zone example.com.
-		{"_acme-challenge.example.com.", "example.com.", "_acme-challenge"},
+		{"_acme-challenge.example.com.", "example.com.", "_acme-challenge", false},
 		// subdomain challenge: _acme-challenge.foo.example.com. on zone example.com.
-		{"_acme-challenge.foo.example.com.", "example.com.", "_acme-challenge.foo"},
+		{"_acme-challenge.foo.example.com.", "example.com.", "_acme-challenge.foo", false},
 		// challenge directly on zone apex (rare but legal — e.g. wildcard on apex)
-		{"example.com.", "example.com.", ""},
+		{"example.com.", "example.com.", "", false},
 		// trailing dots optional on both sides
-		{"_acme-challenge.example.com", "example.com", "_acme-challenge"},
+		{"_acme-challenge.example.com", "example.com", "_acme-challenge", false},
 		// mixed case is preserved in the host portion but matched case-insensitively
-		{"_acme-challenge.Example.com.", "example.com.", "_acme-challenge"},
-		// host does not end with zone (shouldn't normally happen): leave untouched
-		{"foo.other.com.", "example.com.", "foo.other.com"},
+		{"_acme-challenge.Example.com.", "example.com.", "_acme-challenge", false},
+		// host does not end with zone: must return an error rather than a
+		// silently-wrong name passed down to the API.
+		{"foo.other.com.", "example.com.", "", true},
 	}
 	for _, tc := range cases {
 		t.Run(tc.fqdn+"|"+tc.zone, func(t *testing.T) {
-			got := relativeName(tc.fqdn, tc.zone)
+			got, err := relativeName(tc.fqdn, tc.zone)
+			if tc.wantErr {
+				assert.Error(t, err)
+				return
+			}
+
+			assert.NoError(t, err)
 			assert.Equal(t, tc.want, got)
 		})
 	}
