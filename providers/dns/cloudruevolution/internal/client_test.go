@@ -2,6 +2,7 @@ package internal
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -217,4 +218,42 @@ func TestParseAPIError(t *testing.T) {
 			assert.Equal(t, tc.want.HTTPStatus, got.HTTPStatus)
 		})
 	}
+}
+
+func TestNewClient(t *testing.T) {
+	t.Run("missing credentials", func(t *testing.T) {
+		_, err := NewClient("", "s", "p", "https://api", "https://auth")
+		require.Error(t, err)
+	})
+
+	t.Run("invalid api endpoint", func(t *testing.T) {
+		_, err := NewClient("k", "s", "p", "://bad", "https://auth")
+		require.Error(t, err)
+	})
+
+	t.Run("invalid auth endpoint", func(t *testing.T) {
+		_, err := NewClient("k", "s", "p", "https://api", "://bad")
+		require.Error(t, err)
+	})
+
+	t.Run("ok", func(t *testing.T) {
+		c, err := NewClient("k", "s", "p-1",
+			"https://dns.api.cloud.ru",
+			"https://iam.api.cloud.ru/api/v1/auth/token")
+		require.NoError(t, err)
+		require.NotNil(t, c)
+		assert.Equal(t, "p-1", c.ProjectID())
+		assert.NotNil(t, c.HTTPClient)
+		assert.NotNil(t, c.identity)
+		assert.Equal(t, DefaultOperationPollInterval, c.OperationPollInterval)
+		assert.Equal(t, DefaultOperationTimeout, c.OperationTimeout)
+	})
+}
+
+func TestIsAlreadyExists_NonAPIError(t *testing.T) {
+	assert.False(t, IsAlreadyExists(errors.New("network glitch")))
+}
+
+func TestIsNotFound_NonAPIError(t *testing.T) {
+	assert.False(t, IsNotFound(errors.New("network glitch")))
 }

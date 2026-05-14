@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-acme/lego/v5/challenge/dns01"
 	"github.com/go-acme/lego/v5/internal/tester"
 	"github.com/go-acme/lego/v5/providers/dns/cloudruevolution/internal"
 	"github.com/stretchr/testify/assert"
@@ -165,7 +166,7 @@ type mockEvolutionDNS struct {
 	pendingOps map[string]*internal.Operation
 }
 
-func newMockEvolutionDNS(t *testing.T, zoneName string) *mockEvolutionDNS {
+func newMockEvolutionDNS(t *testing.T, zoneName string) *mockEvolutionDNS { //nolint:unparam // single-zone today, reserved for future multi-zone tests
 	t.Helper()
 
 	m := &mockEvolutionDNS{
@@ -480,4 +481,160 @@ func TestDNSProvider_upsertTXT_NoopOnDuplicateValue(t *testing.T) {
 	got := m.listRecords()
 	require.Len(t, got, 1)
 	assert.Equal(t, []string{"same"}, got[0].Values)
+}
+
+// makeChallengeInfo computes the same ChallengeInfo that dns01.GetChallengeInfo
+// would, but locally so tests can drive presentForZone / cleanupForZone
+// without a live DNS resolver.
+func makeChallengeInfo(domain, keyAuth string) dns01.ChallengeInfo {
+	// dns01.GetChallengeInfo is pure (hash of keyAuth + format of fqdn) so we
+	// can call it with a background ctx.
+	return dns01.GetChallengeInfo(context.Background(), domain, keyAuth)
+}
+
+func TestDNSProvider_presentForZone_AssignsRecordState(t *testing.T) {
+	m := newMockEvolutionDNS(t, "example.com")
+	p := newMockedProvider(t, m)
+
+	info := makeChallengeInfo("example.com", "key-auth-1")
+	require.NoError(t, p.presentForZone(context.Background(), "example.com.", info, "tok"))
+
+	recs := m.listRecords()
+	require.Len(t, recs, 1)
+	assert.Equal(t, "_acme-challenge", recs[0].Name)
+	assert.Equal(t, []string{info.Value}, recs[0].Values)
+
+	p.recordsMu.Lock()
+	state, ok := p.records["tok"]
+	p.recordsMu.Unlock()
+	require.True(t, ok)
+	assert.Equal(t, recs[0].ID, state.recordID)
+	assert.Equal(t, info.Value, state.value)
+}
+
+func TestDNSProvider_presentForZone_ZoneMissing(t *testing.T) {
+	m := newMockEvolutionDNS(t, "example.com")
+	p := newMockedProvider(t, m)
+
+	info := makeChallengeInfo("foreign.com", "k")
+	err := p.presentForZone(context.Background(), "foreign.com.", info, "tok")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), `zone "foreign.com" not found`)
+}
+
+func TestDNSProvider_cleanupForZone_DeletesWhenLastValue(t *testing.T) {
+	m := newMockEvolutionDNS(t, "example.com")
+	p := newMockedProvider(t, m)
+
+	info := makeChallengeInfo("example.com", "kk")
+	require.NoError(t, p.presentForZone(context.Background(), "example.com.", info, "tok-X"))
+	require.NoError(t, p.cleanupForZone(context.Background(), "example.com.", info, "tok-X"))
+
+	assert.Empty(t, m.listRecords())
+	p.recordsMu.Lock()
+	_, ok := p.records["tok-X"]
+	p.recordsMu.Unlock()
+	assert.False(t, ok)
+}
+
+func TestDNSProvider_cleanupForZone_PatchesWhenOtherValuesRemain(t *testing.T) {
+	m := newMockEvolutionDNS(t, "example.com")
+	p := newMockedProvider(t, m)
+
+	// lego strips the leading "*." before calling Present, so the wildcard
+	// flow drives two challenges on the same FQDN with different keyAuths.
+	info1 := makeChallengeInfo("example.com", "v1")
+	info2 := makeChallengeInfo("example.com", "v2")
+
+	require.NoError(t, p.presentForZone(context.Background(), "example.com.", info1, "tok-1"))
+	require.NoError(t, p.presentForZone(context.Background(), "example.com.", info2, "tok-2"))
+	require.Len(t, m.listRecords(), 1, "wildcard + apex must collapse to one rrset")
+
+	require.NoError(t, p.cleanupForZone(context.Background(), "example.com.", info1, "tok-1"))
+
+	recs := m.listRecords()
+	require.Len(t, recs, 1)
+	assert.Equal(t, []string{info2.Value}, recs[0].Values)
+}
+
+func TestDNSProvider_cleanupForZone_FallbackWithoutState(t *testing.T) {
+	m := newMockEvolutionDNS(t, "example.com")
+	p := newMockedProvider(t, m)
+
+	info := makeChallengeInfo("example.com", "v")
+	require.NoError(t, p.presentForZone(context.Background(), "example.com.", info, "tok-A"))
+
+	// Simulate process restart between Present and CleanUp: drop the
+	// in-memory token→record bookkeeping.
+	p.recordsMu.Lock()
+	p.records = map[string]recordState{}
+	p.recordsMu.Unlock()
+
+	require.NoError(t, p.cleanupForZone(context.Background(), "example.com.", info, "tok-A"))
+	assert.Empty(t, m.listRecords())
+}
+
+func TestDNSProvider_cleanupForZone_NoZoneIsNoop(t *testing.T) {
+	m := newMockEvolutionDNS(t, "example.com")
+	p := newMockedProvider(t, m)
+
+	info := makeChallengeInfo("nowhere.com", "v")
+	require.NoError(t, p.cleanupForZone(context.Background(), "nowhere.com.", info, "tok"))
+}
+
+func TestDNSProvider_cleanupForZone_NoRecordIsNoop(t *testing.T) {
+	m := newMockEvolutionDNS(t, "example.com")
+	p := newMockedProvider(t, m)
+
+	info := makeChallengeInfo("example.com", "v")
+	require.NoError(t, p.cleanupForZone(context.Background(), "example.com.", info, "tok"))
+}
+
+func TestDNSProvider_upsertTXT_MergesIntoPreexisting(t *testing.T) {
+	// Mock starts with one TXT record already in the zone; upsertTXT for
+	// the same name with a fresh value must produce a single merged rrset.
+	m := newMockEvolutionDNS(t, "example.com")
+	p := newMockedProvider(t, m)
+
+	m.mu.Lock()
+	m.nextID++
+	id := "rec-pre"
+	m.records[id] = &internal.PublicRecord{
+		ID:           id,
+		PublicZoneID: m.zoneID,
+		Name:         "_acme-challenge",
+		Type:         "txt",
+		Values:       []string{"existing"},
+		TTL:          120,
+	}
+	m.mu.Unlock()
+
+	gotID, err := p.upsertTXT(context.Background(), m.zoneID, "_acme-challenge", "fresh")
+	require.NoError(t, err)
+	assert.Equal(t, id, gotID)
+
+	recs := m.listRecords()
+	require.Len(t, recs, 1)
+	assert.ElementsMatch(t, []string{"existing", "fresh"}, recs[0].Values)
+}
+
+func TestDNSProvider_cleanupForZone_GetRecordNotFoundIsNoop(t *testing.T) {
+	m := newMockEvolutionDNS(t, "example.com")
+	p := newMockedProvider(t, m)
+
+	info := makeChallengeInfo("example.com", "v")
+	// Provide a state pointing at a non-existent record id.
+	p.recordsMu.Lock()
+	p.records["tok"] = recordState{recordID: "ghost", value: info.Value}
+	p.recordsMu.Unlock()
+
+	require.NoError(t, p.cleanupForZone(context.Background(), "example.com.", info, "tok"))
+}
+
+func TestAPIError_Error(t *testing.T) {
+	err := &internal.APIError{Code: 6, Message: "already exists", HTTPStatus: 409}
+	got := err.Error()
+	assert.Contains(t, got, "code=6")
+	assert.Contains(t, got, "http=409")
+	assert.Contains(t, got, "already exists")
 }
