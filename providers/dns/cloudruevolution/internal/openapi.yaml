@@ -1,0 +1,3894 @@
+openapi: "3.0.3"
+info:
+  title: Evolution DNS Public API
+  version: 0.0.1
+  description: '[Документация сервиса Evolution DNS](https://cloud.ru/docs/evolution-dns/ug/index.html)'
+  contact:
+    email: support@cloud.ru
+servers:
+  - url: https://dns.api.cloud.ru
+security:
+  - bearerHttpAuthentication: []
+tags:
+  - name: DnsServerService
+  - name: OperationService
+  - name: PrivateRecordSoleService
+  - name: PrivateZoneService
+  - name: PrivateZoneSoleService
+  - name: PublicRecordSoleService
+  - name: PublicZoneService
+  - name: PublicZoneSoleService
+  - name: ReverseRecordService
+  - name: ReverseZoneService
+  - name: VpcDefinitionService
+paths:
+  /v1/dnsServers:
+    get:
+      summary: Получение списка DNS-серверов
+      operationId: DnsServerService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListDnsServersResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: projectId
+          description: Идентификатор проекта.
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: filter
+          description: >-
+            Поле filter — это [cel-выражение](https://github.com/google/cel-spec/blob/master/doc/langdef.md),
+
+            состоящее из фильтрующих выражений, каждое выражении соединяется оператором && (логическое и).
+
+
+            Поддерживаемые поля:
+
+            1. availability_zone_ids []string опциональное. Поддерживаемые операторы: 'in'.
+
+            2. search string опциональное.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - DnsServerService
+    post:
+      summary: Создание DNS-сервера
+      operationId: DnsServerService_Create
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1CreateDnsServerRequest"
+        required: true
+      tags:
+        - DnsServerService
+  "/v1/dnsServers/{dnsServerId}":
+    get:
+      summary: Получение DNS-сервера
+      operationId: DnsServerService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1DnsServer"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: dnsServerId
+          description: Идентификатор DNS-сервера.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - DnsServerService
+    delete:
+      summary: Удаление DNS-сервера
+      operationId: DnsServerService_Delete
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: dnsServerId
+          description: Идентификатор DNS-сервера.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - DnsServerService
+    put:
+      summary: Обновление DNS-сервера
+      operationId: DnsServerService_Update
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: dnsServerId
+          description: Идентификатор DNS-сервера.
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1DnsServerServiceUpdateBody"
+        required: true
+      tags:
+        - DnsServerService
+  "/v1/dnsServers/{dnsServerId}/operations":
+    get:
+      summary: Получение списка операций для конкретного DNS-сервера
+      operationId: DnsServerService_ListOperations
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListDnsServerOperationsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: dnsServerId
+          description: Идентификатор DNS-сервера.
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - DnsServerService
+  /v1/operations:
+    get:
+      summary: Получение списка операций по проекту
+      operationId: OperationService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListOperationsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: projectId
+          description: Идентификатор проекта.
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - OperationService
+  "/v1/operations/{operationId}":
+    get:
+      summary: Получение операции по заданному идентификатору
+      operationId: OperationService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: operationId
+          description: Идентификатор операции.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - OperationService
+  /v1/privateRecordsSole:
+    get:
+      summary: Получение списка записей приватной зоны 
+      operationId: PrivateRecordSoleService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPrivateRecordsSoleResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateZoneId
+          description: Идентификатор приватной зоны
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPrivateRecordsSoleResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPrivateRecordsSoleResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: filter
+          description: >-
+            Поле filter — это [cel-выражениe](https://github.com/google/cel-spec/blob/master/doc/langdef.md),
+             состоящее из фильтрующих выражений, каждое выражении соединяется оператором && (логическое и).
+
+            Поддерживаемые поля:
+
+            1. type string опциональное. Смотрите возможные значения в модели записи.
+
+            2. search string опциональное. Поиск по всем параметрам.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PrivateRecordSoleService
+    post:
+      summary: Создание записи в приватной зоне
+      operationId: PrivateRecordSoleService_Create
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1CreatePrivateRecordSoleRequest"
+        description: Описание параметров запроса для создания записи в приватной зоне.
+        required: true
+      tags:
+        - PrivateRecordSoleService
+  "/v1/privateRecordsSole/{privateRecordId}":
+    get:
+      summary: Получение записи приватной зоны 
+      operationId: PrivateRecordSoleService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1PrivateRecordSole"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateRecordId
+          description: Идентификатор записи приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PrivateRecordSoleService
+    delete:
+      summary: Удаление записи приватной зоны
+      operationId: PrivateRecordSoleService_Delete
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateRecordId
+          description: Идентификатор записи приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PrivateRecordSoleService
+    patch:
+      summary: Обновление записи приватной зоны
+      operationId: PrivateRecordSoleService_Update
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateRecordId
+          description: Идентификатор записи приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1PrivateRecordSoleServiceUpdateBody"
+        required: true
+      tags:
+        - PrivateRecordSoleService
+  "/v1/privateRecordsSole/{privateRecordId}/operations":
+    get:
+      summary: Получение списка операций для конкретной записи приватной зоны
+      operationId: PrivateRecordSoleService_ListOperations
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPrivateRecordSoleOperationsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateRecordId
+          description: Идентификатор записи приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPrivateRecordSoleOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPrivateRecordSoleOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PrivateRecordSoleService
+  /v1/privateZones:
+    get:
+      summary: Получение списка приватных зон
+      operationId: PrivateZoneService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPrivateZonesResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: projectId
+          description: Идентификатор проекта.
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPrivateZoneResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: filter
+          description: >-
+            Поле filter — это [cel-выражениe](https://github.com/google/cel-spec/blob/master/doc/langdef.md),
+
+            состоящее из фильтрующих выражений, каждое выражении соединяется оператором && (логическое и).
+
+
+            Поддерживаемые поля:
+
+            1. domain string опциональное.
+
+            2. name string опциональное.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PrivateZoneService
+    post:
+      summary: Создание приватной зоны
+      operationId: PrivateZoneService_Create
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1CreatePrivateZoneRequest"
+        description: Описание параметров запроса для создания приватной зоны.
+        required: true
+      tags:
+        - PrivateZoneService
+  "/v1/privateZones/{privateZoneId}":
+    get:
+      summary: Получение приватной зоны
+      operationId: PrivateZoneService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1PrivateZone"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateZoneId
+          description: Идентификатор приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PrivateZoneService
+    delete:
+      summary: Удаление приватной зоны
+      operationId: PrivateZoneService_Delete
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateZoneId
+          description: Идентификатор приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PrivateZoneService
+    patch:
+      summary: Обновление приватной зоны
+      operationId: PrivateZoneService_Update
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateZoneId
+          description: Идентификатор приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1PrivateZoneServiceUpdateBody"
+        required: true
+      tags:
+        - PrivateZoneService
+  "/v1/privateZones/{privateZoneId}/operations":
+    get:
+      summary: Получение списка операций для конкретного приватной зоны
+      operationId: PrivateZoneService_ListOperations
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPrivateZoneOperationsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateZoneId
+          description: Идентификатор приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PrivateZoneService
+  /v1/privateZonesSole:
+    get:
+      summary: Получение списка приватных зон
+      operationId: PrivateZoneSoleService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPrivateZonesSoleResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: projectId
+          description: Идентификатор проекта.
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPrivateZonesSoleResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPrivateZonesSoleResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: filter
+          description: >-
+            Поле filter — это [cel-выражениe](https://github.com/google/cel-spec/blob/master/doc/langdef.md),
+
+            состоящее из фильтрующих выражений, каждое выражении соединяется оператором && (логическое и).
+
+
+            Поддерживаемые поля:
+
+            1. domain string опциональное.
+
+            2. name string опциональное.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PrivateZoneSoleService
+    post:
+      summary: Создание приватной зоны
+      operationId: PrivateZoneSoleService_Create
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1CreatePrivateZoneSoleRequest"
+        description: Описание параметров запроса для создания приватной зоны.
+        required: true
+      tags:
+        - PrivateZoneSoleService
+  "/v1/privateZonesSole/{privateZoneId}":
+    get:
+      summary: Получение приватной зоны
+      operationId: PrivateZoneSoleService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1PrivateZoneSole"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateZoneId
+          description: Идентификатор приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PrivateZoneSoleService
+    delete:
+      summary: Удаление приватной зоны
+      operationId: PrivateZoneSoleService_Delete
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateZoneId
+          description: Идентификатор приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PrivateZoneSoleService
+    patch:
+      summary: Обновление приватной зоны
+      operationId: PrivateZoneSoleService_Update
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateZoneId
+          description: Идентификатор приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1PrivateZoneSoleServiceUpdateBody"
+        required: true
+      tags:
+        - PrivateZoneSoleService
+  "/v1/privateZonesSole/{privateZoneId}/operations":
+    get:
+      summary: Получение списка операций для конкретного приватной зоны
+      operationId: PrivateZoneSoleService_ListOperations
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPrivateZoneSoleOperationsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: privateZoneId
+          description: Идентификатор приватной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPrivateZoneSoleOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPrivateZoneSoleOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PrivateZoneSoleService
+  /v1/publicRecordsSole:
+    get:
+      summary: Получение списка записей публичных зон
+      operationId: PublicRecordSoleService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPublicRecordsSoleResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicZoneId
+          description: Идентификатор публичной зоны.
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPublicRecordsSoleResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPublicRecordsSoleResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: filter
+          description: >-
+            Поле filter — это [cel-выражениe](https://github.com/google/cel-spec/blob/master/doc/langdef.md),
+             состоящее из фильтрующих выражений, каждое выражении соединяется оператором && (логическое и).
+
+            Поддерживаемые поля:
+
+            1. type string опциональное. Смотрите возможные значения в модели записи.
+
+            2. search string опциональное. Поиск по всем параметрам.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PublicRecordSoleService
+    post:
+      summary: Создание записи публичной зоны 
+      operationId: PublicRecordSoleService_Create
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1CreatePublicRecordSoleRequest"
+        description: Описание параметров запроса для создания записи публичной зоны .
+        required: true
+      tags:
+        - PublicRecordSoleService
+  "/v1/publicRecordsSole/{publicRecordId}":
+    get:
+      summary: Получение записи публичной зоны 
+      operationId: PublicRecordSoleService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1PublicRecordSole"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicRecordId
+          description: Идентификатор записи публичной зоны .
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PublicRecordSoleService
+    delete:
+      summary: Удаление записи публичной зоны 
+      operationId: PublicRecordSoleService_Delete
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicRecordId
+          description: Идентификатор записи публичной зоны .
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PublicRecordSoleService
+    patch:
+      summary: Обновление записи публичной зоны 
+      operationId: PublicRecordSoleService_Update
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicRecordId
+          description: Идентификатор записи публичной зоны .
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1PublicRecordSoleServiceUpdateBody"
+        required: true
+      tags:
+        - PublicRecordSoleService
+  "/v1/publicRecordsSole/{publicRecordId}/operations":
+    get:
+      summary: Получение списка операций для конкретной записи публичной зоны 
+      operationId: PublicRecordSoleService_ListOperations
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPublicRecordSoleOperationsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicRecordId
+          description: Идентификатор записи публичной зоны .
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPublicRecordSoleOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPublicRecordSoleOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PublicRecordSoleService
+  /v1/publicZones:
+    get:
+      summary: Получение списка публичных зон 
+      operationId: PublicZoneService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPublicZonesResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: projectId
+          description: Идентификатор проекта.
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPublicZonesResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPublicZonesResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: filter
+          description: >-
+            Поле filter — это [cel-выражениe](https://github.com/google/cel-spec/blob/master/doc/langdef.md),
+
+            состоящее из фильтрующих выражений, каждое выражении соединяется оператором && (логическое и).
+
+
+            Поддерживаемые поля:
+
+            1. domain string опциональное.
+
+            2. name string опциональное.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PublicZoneService
+    post:
+      summary: Создание публичной зоны
+      operationId: PublicZoneService_Create
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1CreatePublicZoneRequest"
+        description: Описание параметров запроса для создания публичной зоны.
+        required: true
+      tags:
+        - PublicZoneService
+  "/v1/publicZones/{publicZoneId}":
+    get:
+      summary: Получение публичной зоны
+      operationId: PublicZoneService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1PublicZone"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicZoneId
+          description: Идентификатор публичной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PublicZoneService
+    delete:
+      summary: Удаление публичной зоны
+      operationId: PublicZoneService_Delete
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicZoneId
+          description: Идентификатор публичной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PublicZoneService
+    patch:
+      summary: Обновление публичной зоны
+      operationId: PublicZoneService_Update
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicZoneId
+          description: Идентификатор публичной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1PublicZoneServiceUpdateBody"
+        required: true
+      tags:
+        - PublicZoneService
+  "/v1/publicZones/{publicZoneId}/operations":
+    get:
+      summary: Получение списка операций для конкретного публичной зоны
+      operationId: PublicZoneService_ListOperations
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPublicZoneOperationsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicZoneId
+          description: Идентификатор публичной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PublicZoneService
+  /v1/publicZonesSole:
+    get:
+      summary: Получение списка публичных зон 
+      operationId: PublicZoneSoleService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPublicZonesSoleResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: projectId
+          description: Идентификатор проекта.
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPublicZonesSoleResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPublicZonesSoleResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: filter
+          description: >-
+            Поле filter - это [cel-выражениe](https://github.com/google/cel-spec/blob/master/doc/langdef.md),
+
+            состоящее из фильтрующих выражений, каждое выражении соединяется оператором && (логическое и).
+
+
+            Поддерживаемые поля:
+
+            1. domain string опциональное.
+
+            2. name string опциональное.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PublicZoneSoleService
+    post:
+      summary: Создание публичной зоны
+      operationId: PublicZoneSoleService_Create
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1CreatePublicZoneSoleRequest"
+        description: Описание параметров запроса для создания публичной зоны.
+        required: true
+      tags:
+        - PublicZoneSoleService
+  "/v1/publicZonesSole/{publicZoneId}":
+    get:
+      summary: Получение публичной зоны
+      operationId: PublicZoneSoleService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1PublicZoneSole"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicZoneId
+          description: Идентификатор публичной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PublicZoneSoleService
+    delete:
+      summary: Удаление публичной зоны
+      operationId: PublicZoneSoleService_Delete
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicZoneId
+          description: Идентификатор публичной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - PublicZoneSoleService
+    patch:
+      summary: Обновление публичной зоны
+      operationId: PublicZoneSoleService_Update
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicZoneId
+          description: Идентификатор публичной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1PublicZoneSoleServiceUpdateBody"
+        required: true
+      tags:
+        - PublicZoneSoleService
+  "/v1/publicZonesSole/{publicZoneId}/operations":
+    get:
+      summary: Получение списка операций для конкретного публичной зоны
+      operationId: PublicZoneSoleService_ListOperations
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListPublicZoneSoleOperationsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: publicZoneId
+          description: Идентификатор публичной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPublicZoneSoleOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPublicZoneSoleOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - PublicZoneSoleService
+  /v1/reverse/records:
+    get:
+      summary: Получение списка доменных записей обратной зоны
+      operationId: ReverseRecordService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListReverseRecordsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: reverseZoneId
+          description: Идентификатор записи обратной зоны.
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListReverseRecordsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListReverseRecordsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: filter
+          description: >-
+            Поле filter — это [cel-выражениe](https://github.com/google/cel-spec/blob/master/doc/langdef.md),
+             состоящее из фильтрующих выражений, каждое выражении соединяется оператором && (логическое и).
+
+            Поддерживаемые поля:
+
+            1. type string опциональное. Смотрите возможные значения в модели записи.
+
+            2. search string опциональное. Поиск по всем параметрам.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - ReverseRecordService
+    post:
+      summary: Создание записи в обратной зоне
+      operationId: ReverseRecordService_Create
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1CreateReverseRecordRequest"
+        description: Описание параметров запроса для создания записи обратной зоны.
+        required: true
+      tags:
+        - ReverseRecordService
+  "/v1/reverse/records/{reverseRecordId}":
+    get:
+      summary: Получение записи обратной зоны
+      operationId: ReverseRecordService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ReverseRecord"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: reverseRecordId
+          description: Идентификатор записи обратной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - ReverseRecordService
+    delete:
+      summary: Удаление записи обратной зоны
+      operationId: ReverseRecordService_Delete
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: reverseRecordId
+          description: Идентификатор записи обратной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - ReverseRecordService
+    patch:
+      summary: Обновление записи обратной зоны
+      operationId: ReverseRecordService_Update
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: reverseRecordId
+          description: Идентификатор записи обратной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1ReverseRecordServiceUpdateBody"
+        required: true
+      tags:
+        - ReverseRecordService
+  "/v1/reverse/records/{reverseRecordId}/operations":
+    get:
+      summary: Получение списка операций для конкретной записи обратной зоны
+      operationId: ReverseRecordService_ListOperations
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListReverseRecordOperationsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: reverseRecordId
+          description: Идентификатор записи обратной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPrivateZoneSoleOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPrivateZoneSoleOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - ReverseRecordService
+  /v1/reverse/zones:
+    get:
+      summary: Получение списка обратных зон
+      operationId: ReverseZoneService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListReverseZonesResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: projectId
+          description: Идентификатор проекта.
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListReverseZonesResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListReverseZonesResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: filter
+          description: >-
+            Поле filter — это [cel-выражениe](https://github.com/google/cel-spec/blob/master/doc/langdef.md),
+
+            состоящее из фильтрующих выражений, каждое выражении соединяется оператором && (логическое и).
+
+
+            Поддерживаемые поля:
+
+            1. domain string опциональное.
+
+            2. subnet_id string опциональное.
+
+            3. vpc_id string опциональное.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - ReverseZoneService
+    post:
+      summary: Создание обратной зоны
+      operationId: ReverseZoneService_Create
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1CreateReverseZoneRequest"
+        description: Описание параметров запроса для создания обратной зоны.
+        required: true
+      tags:
+        - ReverseZoneService
+  "/v1/reverse/zones/{reverseZoneId}":
+    get:
+      summary: Получение обратной зоны
+      operationId: ReverseZoneService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ReverseZone"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: reverseZoneId
+          description: Идентификатор обратной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - ReverseZoneService
+    delete:
+      summary: Удаление обратной зоны
+      operationId: ReverseZoneService_Delete
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: reverseZoneId
+          description: Идентификатор обратной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - ReverseZoneService
+    patch:
+      summary: Обновление обратной зоны
+      operationId: ReverseZoneService_Update
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/dnsv1Operation"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: reverseZoneId
+          description: Идентификатор обратной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/v1ReverseZoneServiceUpdateBody"
+        required: true
+      tags:
+        - ReverseZoneService
+  "/v1/reverse/zones/{reverseZoneId}/operations":
+    get:
+      summary: Получение списка операций для конкретной обратной зоны
+      operationId: ReverseZoneService_ListOperations
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListReverseZoneOperationsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: reverseZoneId
+          description: Идентификатор обратной зоны.
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListPrivateZoneSoleOperationsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListPrivateZoneSoleOperationsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - ReverseZoneService
+  /v1/vpcDefinitions:
+    get:
+      summary: Получение списка определений VPC по проекту
+      operationId: VpcDefinitionService_List
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1ListVpcDefinitionsResponse"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: projectId
+          description: Идентификатор проекта.
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: pageSize
+          description: >-
+            Максимальное количество результатов на странице ответа.
+
+            Если значение больше [page_size], сервис возвращает [next_page_token], который
+
+            используется в [ListVpcDefinitionsResponse]. Значение [page_size] по умолчанию 100.
+          in: query
+          required: false
+          schema:
+            type: string
+            format: int64
+        - name: pageToken
+          description: >-
+            Токен запрашиваемой страницы с результатами. Чтобы получить
+            результаты следующей
+
+            страницы для [page_token], используйте значение [ListVpcDefinitionsResponse.next_page_token],
+
+            полученное из прошлого запроса.
+          in: query
+          required: false
+          schema:
+            type: string
+      tags:
+        - VpcDefinitionService
+  "/v1/vpcDefinitions/{vpcDefinitionId}":
+    get:
+      summary: Получение объекта определения VPC по заданному идентификатору
+      operationId: VpcDefinitionService_Get
+      responses:
+        "200":
+          description: A successful response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/v1VpcDefinition"
+        default:
+          description: An unexpected error response.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/rpcStatus"
+      parameters:
+        - name: vpcDefinitionId
+          description: Идентификатор определения VPC.
+          in: path
+          required: true
+          schema:
+            type: string
+      tags:
+        - VpcDefinitionService
+components:
+  securitySchemes:
+    bearerHttpAuthentication:
+      type: http
+      scheme: bearer
+  schemas:
+    dnsv1Operation:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор операции.
+        resourceName:
+          type: string
+          title: >-
+            Информация о ресурсе, над которым производится операция.
+
+            Строится следующим образом: urn:cloud:SERVICE:ZONE_OPT:PROJECT_OPT:RESOURCE_TYPE_OPT.
+
+            Пример: urn:cloud:lbaas::54295782-7aef-43e6-b33b-c9735938677a:backend
+          readOnly: true
+        resourceId:
+          type: string
+          title: |-
+            Уникальный идентификатор ресурса, над которым производится операция.
+            Пример: 54295782-7aef-43e6-b33b-c9735938677a
+          readOnly: true
+        createdAt:
+          type: string
+          format: date-time
+          description: Время создания операции.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Время последнего изменения операции.
+          readOnly: true
+        done:
+          type: boolean
+          description: >-
+            Флаг завершенности операции.
+
+            Если значение `false`, то операция в процессе выполнения.
+
+            Если значение `true`, то операция завершена и поле `error` может быть заполнено.
+          readOnly: true
+        description:
+          type: string
+          description: Описание операции. От 0 до 255 символов.
+          readOnly: true
+        error:
+          $ref: "#/components/schemas/rpcStatus"
+      required:
+        - id
+    googleprotobufAny:
+      type: object
+      properties:
+        "@type":
+          type: string
+          description: >-
+            A URL/resource name that uniquely identifies the type of the
+            serialized
+
+            protocol buffer message. This string must contain at least
+
+            one "/" character. The last segment of the URL's path must represent
+
+            the fully qualified name of the type (as in
+
+            `path/google.protobuf.Duration`). The name should be in a canonical form
+
+            (e.g., leading "." is not accepted).
+
+
+            In practice, teams usually precompile into the binary all types that they
+
+            expect it to use in the context of Any. However, for URLs which use the
+
+            scheme `http`, `https`, or no scheme, one can optionally set up a type
+
+            server that maps type URLs to message definitions as follows:
+
+
+            * If no scheme is provided, `https` is assumed.
+
+            * An HTTP GET on the URL must yield a [google.protobuf.Type][]
+              value in binary format, or produce an error.
+            * Applications are allowed to cache lookup results based on the
+              URL, or have them precompiled into a binary to avoid any
+              lookup. Therefore, binary compatibility needs to be preserved
+              on changes to types. (Use versioned type names to manage
+              breaking changes.)
+
+            Note: this functionality is not currently available in the official
+
+            protobuf release, and it is not used for type URLs beginning with
+
+            type.googleapis.com. As of May 2023, there are no widely used type server
+
+            implementations and no plans to implement one.
+
+
+            Schemes other than `http`, `https` (or the empty scheme) might be
+
+            used with implementation specific semantics.
+      additionalProperties: {}
+      description: >-
+        `Any` contains an arbitrary serialized protocol buffer message along
+        with a
+
+        URL that describes the type of the serialized message.
+
+
+        Protobuf library provides support to pack/unpack Any values in the form
+
+        of utility functions or additional generated methods of the Any type.
+
+
+        Example 1: Pack and unpack a message in C++.
+
+            Foo foo = ...;
+            Any any;
+            any.PackFrom(foo);
+            ...
+            if (any.UnpackTo(&foo)) {
+              ...
+            }
+
+        Example 2: Pack and unpack a message in Java.
+
+            Foo foo = ...;
+            Any any = Any.pack(foo);
+            ...
+            if (any.is(Foo.class)) {
+              foo = any.unpack(Foo.class);
+            }
+            // or ...
+            if (any.isSameTypeAs(Foo.getDefaultInstance())) {
+              foo = any.unpack(Foo.getDefaultInstance());
+            }
+
+         Example 3: Pack and unpack a message in Python.
+
+            foo = Foo(...)
+            any = Any()
+            any.Pack(foo)
+            ...
+            if any.Is(Foo.DESCRIPTOR):
+              any.Unpack(foo)
+              ...
+
+         Example 4: Pack and unpack a message in Go
+
+             foo := &pb.Foo{...}
+             any, err := anypb.New(foo)
+             if err != nil {
+               ...
+             }
+             ...
+             foo := &pb.Foo{}
+             if err := any.UnmarshalTo(foo); err != nil {
+               ...
+             }
+
+        The pack methods provided by protobuf library will by default use
+
+        'type.googleapis.com/full.type.name' as the type URL and the unpack
+
+        methods only use the fully qualified type name after the last '/'
+
+        in the type URL, for example "foo.bar.com/x/y.z" will yield type
+
+        name "y.z".
+
+
+        JSON
+
+        ====
+
+        The JSON representation of an `Any` value uses the regular
+
+        representation of the deserialized, embedded message, with an
+
+        additional field `@type` which contains the type URL. Example:
+
+            package google.profile;
+            message Person {
+              string first_name = 1;
+              string last_name = 2;
+            }
+
+            {
+              "@type": "type.googleapis.com/google.profile.Person",
+              "firstName": <string>,
+              "lastName": <string>
+            }
+
+        If the embedded message type is well-known and has a custom JSON
+
+        representation, that representation will be embedded adding a field
+
+        `value` which holds the custom JSON in addition to the `@type`
+
+        field. Example (for message [google.protobuf.Duration][]):
+
+            {
+              "@type": "type.googleapis.com/google.protobuf.Duration",
+              "value": "1.212s"
+            }
+    rpcStatus:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          description: |-
+            The status code, which should be an enum value of
+            [google.rpc.Code][google.rpc.Code].
+        message:
+          type: string
+          description: >-
+            A developer-facing error message, which should be in English. Any
+
+            user-facing error message should be localized and sent in the
+
+            [google.rpc.Status.details][google.rpc.Status.details] field, or localized
+
+            by the client.
+        details:
+          type: array
+          items:
+            $ref: "#/components/schemas/googleprotobufAny"
+          description: >-
+            A list of messages that carry the error details.  There is a common
+            set of
+
+            message types for APIs to use.
+      description: >-
+        The `Status` type defines a logical error model that is suitable for
+
+        different programming environments, including REST APIs and RPC APIs. It is
+
+        used by [gRPC](https://github.com/grpc). Each `Status` message contains
+
+        three pieces of data: error code, error message, and error details.
+
+
+        You can find out more about this error model and how to work with it in the
+
+        [API Design Guide](https://cloud.google.com/apis/design/errors).
+    v1BalancingPolicy:
+      type: string
+      enum:
+        - BALANCING_POLICY_UNSPECIFIED
+        - BALANCING_POLICY_ROUND_ROBIN
+        - BALANCING_POLICY_ROUND_ROBIN_RESERVED
+        - BALANCING_POLICY_SELECTOR
+      default: BALANCING_POLICY_UNSPECIFIED
+      description: >-
+        Алгоритм балансировки.
+
+         - BALANCING_POLICY_UNSPECIFIED: Алгоритм балансировки не указан.
+         - BALANCING_POLICY_ROUND_ROBIN: Алгоритм балансировки ROUND_ROBIN.
+         - BALANCING_POLICY_ROUND_ROBIN_RESERVED: Алгоритм балансировки ROUND_ROBIN_RESERVED (пока не реализован).
+         - BALANCING_POLICY_SELECTOR: ТАлгоритм балансировки SELECTOR (пока не реализован).
+    v1CreateDnsServerRequest:
+      type: object
+      properties:
+        subnetId:
+          type: string
+          description: Идентификатор подсети.
+        name:
+          type: string
+          description: Название DNS-сервера.
+        ipAddress:
+          type: string
+          description: IP-адрес DNS-сервера.
+        description:
+          type: string
+          description: Описание DNS-сервера.
+      required:
+        - subnetId
+        - name
+    v1CreatePrivateRecordSoleRequest:
+      type: object
+      properties:
+        privateZoneId:
+          type: string
+          description: Идентификатор приватной зоны.
+        name:
+          type: string
+          description: Название записи приватной зоны.
+        type:
+          type: string
+          description: |-
+            Тип записи приватной зоны.
+            Возможные значения:
+            a, aaaa, srv, cname, mx, ns, spf, txt, caa, gslb_a, gslb_aaaa.
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи приватной зоны.
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи приватной зоны в кеше.
+        readOnly:
+          type: boolean
+          description: Признак доступности записи приватной зоны только на чтение.
+          readOnly: true
+        description:
+          type: string
+          description: Описание записи приватной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов записи приватной зоны.
+        wildcard:
+          type: boolean
+          description: Признак wildcard-записи.
+        gslbData:
+          $ref: "#/components/schemas/v1GslbData"
+      description: Описание параметров запроса для создания записи приватной зоны.
+      required:
+        - privateZoneId
+        - name
+        - type
+        - values
+        - ttl
+    v1CreatePrivateZoneRequest:
+      type: object
+      properties:
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+        name:
+          type: string
+          description: Название приватной зоны.
+        domain:
+          type: string
+          description: Доменное имя приватной зоны.
+        description:
+          type: string
+          description: Описание приватной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов приватной зоны.
+        linkedVpcIds:
+          type: array
+          items:
+            type: string
+          description: Список подключаемых VPC.
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PrivateRecord"
+          description: Список записей приватной зоны.
+      description: Описание параметров запроса для создания приватной зоны.
+      required:
+        - projectId
+        - name
+        - domain
+    v1CreatePrivateZoneSoleRequest:
+      type: object
+      properties:
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+        name:
+          type: string
+          description: Название приватной зоны.
+        domain:
+          type: string
+          description: Доменное имя приватной зоны.
+        description:
+          type: string
+          description: Описание приватной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов приватной зоны.
+        linkedVpcIds:
+          type: array
+          items:
+            type: string
+          description: Список подключаемых VPC.
+      description: Описание параметров запроса для создания приватной зоны.
+      required:
+        - projectId
+        - name
+        - domain
+    v1CreatePublicRecordSoleRequest:
+      type: object
+      properties:
+        publicZoneId:
+          type: string
+          description: Идентификатор публичной зоны.
+        name:
+          type: string
+          description: Название записи публичной зоны .
+        type:
+          type: string
+          description: |-
+            Тип записи публичной зоны .
+            Возможные значения:
+            a, aaaa, srv, cname, mx, ns, spf, txt, caa.
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи публичной зоны .
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи публичной зоны в кеше.
+        readOnly:
+          type: boolean
+          description: Признак доступности записи публичной зоны  только на чтение.
+          readOnly: true
+        description:
+          type: string
+          description: Описание записи публичной зоны .
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов записи публичной зоны .
+        wildcard:
+          type: boolean
+          description: Признак wildcard-записи.
+        gslbData:
+          $ref: "#/components/schemas/v1GslbData"
+      description: Описание параметров запроса для создания записи публичной зоны .
+      required:
+        - publicZoneId
+        - name
+        - type
+        - values
+        - ttl
+    v1CreatePublicZoneRequest:
+      type: object
+      properties:
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+        name:
+          type: string
+          description: Название публичной зоны.
+        domain:
+          type: string
+          description: Доменное имя публичной зоны.
+        description:
+          type: string
+          description: Описание публичной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов публичной зоны.
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PublicRecord"
+          description: Список записей публичных зон.
+        autoUpdateVerificationToken:
+          type: boolean
+          description: >-
+            Флаг автоматического обновления токена подтверждения публичной зоны.
+
+            Если флаг выставлен в true, то при каждом запросе изменений публичной зоны сервис
+
+            проверит токен и, если токен не сгенерирован или устарел, выпустит
+
+            новый, значение которого запишется в поле [verification_token].
+      description: Описание параметров запроса для создания публичной зоны.
+      required:
+        - projectId
+        - name
+        - domain
+    v1CreatePublicZoneSoleRequest:
+      type: object
+      properties:
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+        name:
+          type: string
+          description: Название публичной зоны.
+        domain:
+          type: string
+          description: Доменное имя публичной зоны.
+        description:
+          type: string
+          description: Описание публичной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов публичной зоны.
+        autoUpdateVerificationToken:
+          type: boolean
+          description: >-
+            Флаг автоматического обновления токена подтверждения публичной зоны.
+
+            Если флаг выставлен в true, то при каждом запросе изменений публичной зоны сервис
+
+            проверит токен и, если токен не сгенерирован или устарел, выпустит
+
+            новый, значение которого запишется в поле [verification_token].
+      description: Описание параметров запроса для создания публичной зоны.
+      required:
+        - projectId
+        - name
+        - domain
+    v1CreateReverseRecordRequest:
+      type: object
+      properties:
+        reverseZoneId:
+          type: string
+          description: Идентификатор обратной зоны.
+        name:
+          type: string
+          description: Наименование записи обратной зоны.
+        type:
+          type: string
+          description: |-
+            Тип записи обратной зоны.
+            Возможные значения: ptr.
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи обратной зоны.
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи обратной зоны в кеше.
+      description: Описание параметров запроса для создания записи обратной зоны.
+      required:
+        - reverseZoneId
+        - name
+        - type
+        - values
+        - ttl
+    v1CreateReverseZoneRequest:
+      type: object
+      properties:
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+        description:
+          type: string
+          description: Пользовательское описание.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов приватной зоны.
+        subnetId:
+          type: string
+          description: Идентификатор подсети.
+      description: Описание параметров запроса для создания обратной зоны.
+      required:
+        - projectId
+        - subnetId
+    v1DnsServer:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор DNS-сервера.
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        subnetId:
+          type: string
+          description: Идентификатор подсети.
+        vpcId:
+          type: string
+          description: Идентификатор VPC.
+        availabilityZoneId:
+          type: string
+          description: Идентификатор зоны доступности.
+        name:
+          type: string
+          description: Название DNS-сервера.
+        ipAddress:
+          type: string
+          description: IP-адрес DNS-сервера.
+        description:
+          type: string
+          description: Описание DNS-сервера.
+        state:
+          type: string
+          description: |-
+            Состояние DNS-сервера.
+            Возможные значения:
+            creating, updating, deleting, ok, error.
+          readOnly: true
+        usedIn:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1UsedIn"
+          description: Список тех, кем используется DNS-сервер.
+          readOnly: true
+      description: DNS-сервер.
+      required:
+        - subnetId
+        - vpcId
+        - availabilityZoneId
+        - name
+    v1DnsServerServiceUpdateBody:
+      type: object
+      properties:
+        description:
+          type: string
+          description: Описание DNS-сервера.
+        name:
+          type: string
+          description: Название DNS-сервера.
+    v1GslbData:
+      type: object
+      properties:
+        links:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1GslbLink"
+          description: Модели GslbLink.
+        balancingPolicy:
+          $ref: "#/components/schemas/v1BalancingPolicy"
+      description: Данные GSLB.
+      required:
+        - links
+        - balancingPolicy
+    v1GslbLink:
+      type: object
+      properties:
+        fqdn:
+          type: string
+          description: FQDN, на который ведет этот линк.
+        weight:
+          type: integer
+          format: int64
+          description: Вес, используется в алгоритмах балансировки кроме ROUND_ROBIN.
+        priority:
+          type: integer
+          format: int64
+          description: Приоритет, используется в алгоритмах балансировки кроме ROUND_ROBIN.
+        isEnabled:
+          type: boolean
+          description: Флаг включения/выключения линка.
+      description: Модель GslbLink.
+      required:
+        - fqdn
+        - isEnabled
+    v1ListDnsServerOperationsResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/dnsv1Operation"
+          description: Список операций.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос получения списка операций.
+    v1ListDnsServersResponse:
+      type: object
+      properties:
+        servers:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1DnsServer"
+          description: Список DNS-серверов.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+    v1ListOperationsResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/dnsv1Operation"
+          description: Список операций.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос получения списка операций.
+    v1ListPrivateRecordSoleOperationsResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/dnsv1Operation"
+          description: Список операций.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос получения списка операций.
+    v1ListPrivateRecordsSoleResponse:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PrivateRecordSole"
+          description: Список записей приватной зоны.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос для получения списка записей приватной зоны.
+    v1ListPrivateZoneOperationsResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/dnsv1Operation"
+          description: Список операций.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос получения списка операций.
+    v1ListPrivateZoneSoleOperationsResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/dnsv1Operation"
+          description: Список операций.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос получения списка операций.
+    v1ListPrivateZonesResponse:
+      type: object
+      properties:
+        zones:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PrivateZone"
+          description: Список приватных зон.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+    v1ListPrivateZonesSoleResponse:
+      type: object
+      properties:
+        zones:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PrivateZoneSole"
+          description: Список приватных зон.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+    v1ListPublicRecordSoleOperationsResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/dnsv1Operation"
+          description: Список операций.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос получения списка операций.
+    v1ListPublicRecordsSoleResponse:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PublicRecordSole"
+          description: Список записей публичных зон.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос для получения списка публичных
+        записей.
+    v1ListPublicZoneOperationsResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/dnsv1Operation"
+          description: Список операций.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос получения списка операций.
+    v1ListPublicZoneSoleOperationsResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/dnsv1Operation"
+          description: Список операций.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос получения списка операций.
+    v1ListPublicZonesResponse:
+      type: object
+      properties:
+        zones:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PublicZone"
+          description: Список публичных зон .
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос для получения списка публичных зон .
+    v1ListPublicZonesSoleResponse:
+      type: object
+      properties:
+        zones:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PublicZoneSole"
+          description: Список публичных зон .
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос для получения списка публичных зон .
+    v1ListReverseRecordOperationsResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/dnsv1Operation"
+          description: Список операций.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос получения списка операций.
+    v1ListReverseRecordsResponse:
+      type: object
+      properties:
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1ReverseRecord"
+          description: Модели записей обратных зон.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос для получения списка записей
+        обратных зон.
+    v1ListReverseZoneOperationsResponse:
+      type: object
+      properties:
+        operations:
+          type: array
+          items:
+            $ref: "#/components/schemas/dnsv1Operation"
+          description: Список операций.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос получения списка операций.
+    v1ListReverseZonesResponse:
+      type: object
+      properties:
+        zones:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1ReverseZone"
+          description: Список обратных зон.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+      description: Описание параметров ответа на запрос для получения списка обратных зон.
+    v1ListVpcDefinitionsResponse:
+      type: object
+      properties:
+        vpcDefinitions:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1VpcDefinition"
+          description: Список определений VPC.
+        nextPageToken:
+          type: string
+          description: Токен следующей страницы с результатами.
+    v1PrivateRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор записи приватной зоны.
+          readOnly: true
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        name:
+          type: string
+          description: Наименование записи приватной зоны.
+        type:
+          type: string
+          description: |-
+            Тип записи приватной зоны.
+            Возможные значения:
+            a, aaaa, srv, cname, mx, spf, txt, caa, gslb_a, gslb_aaaa.
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи приватной зоны.
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи приватной зоны в кеше.
+        readOnly:
+          type: boolean
+          description: Признак доступности записи приватной зоны только на чтение.
+          readOnly: true
+        description:
+          type: string
+          description: Описание записи приватной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов записи приватной зоны.
+        wildcard:
+          type: boolean
+          description: Признак wildcard-записи.
+        gslbData:
+          $ref: "#/components/schemas/v1GslbData"
+      description: Запись приватной зоны.
+      required:
+        - name
+        - type
+        - values
+        - ttl
+    v1PrivateRecordSole:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор записи приватной зоны.
+          readOnly: true
+        privateZoneId:
+          type: string
+          description: Идентификатор приватной зоны.
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        name:
+          type: string
+          description: Наименование записи приватной зоны.
+        type:
+          type: string
+          description: |-
+            Тип записи приватной зоны.
+            Возможные значения:
+            a, aaaa, srv, cname, mx, spf, txt, caa, gslb_a, gslb_aaaa.
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи приватной зоны.
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи приватной зоны в кеше.
+        readOnly:
+          type: boolean
+          description: Признак доступности записи приватной зоны только на чтение.
+          readOnly: true
+        description:
+          type: string
+          description: Описание записи приватной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов записи приватной зоны.
+        wildcard:
+          type: boolean
+          description: Признак wildcard-записи.
+        gslbData:
+          $ref: "#/components/schemas/v1GslbData"
+      description: Запись приватной зоны.
+      required:
+        - privateZoneId
+        - name
+        - type
+        - values
+        - ttl
+    v1PrivateRecordSoleServiceUpdateBody:
+      type: object
+      properties:
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи приватной зоны.
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи приватной зоны в кеше.
+        description:
+          type: string
+          description: Описание записи приватной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов записи приватной зоны.
+        gslbData:
+          $ref: "#/components/schemas/v1GslbData"
+      description: Описание параметров запроса для обновления записи приватной зоны.
+    v1PrivateZone:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор приватной зоны.
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+        name:
+          type: string
+          description: Название приватной зоны.
+        domain:
+          type: string
+          description: Доменное имя приватной зоны.
+        readOnly:
+          type: boolean
+          description: Приватная зона доступна только на чтение.
+          readOnly: true
+        state:
+          type: string
+          description: |-
+            Состояние зоны.
+            Возможные значения:
+            creating, updating, deleting, ok, error.
+          readOnly: true
+        description:
+          type: string
+          description: Описание приватной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов приватной зоны.
+        linkedVpcIds:
+          type: array
+          items:
+            type: string
+          description: Список идентификаторов подключенных VPC.
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PrivateRecord"
+          description: Список записей приватной зоны.
+      description: Приватная зона.
+      required:
+        - projectId
+        - name
+        - domain
+    v1PrivateZoneServiceUpdateBody:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Название приватной зоны.
+        activeState:
+          type: boolean
+          description: Состояние активности приватной зоны.
+        description:
+          type: string
+          description: Описание приватной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов приватной зоны.
+        linkedVpcIds:
+          type: array
+          items:
+            type: string
+          description: Список подключенных VPC.
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PrivateRecord"
+          description: Список записей приватной зоны.
+      description: Описание параметров запроса для обновления приватной зоны.
+    v1PrivateZoneSole:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор приватной зоны.
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+        name:
+          type: string
+          description: Название приватной зоны.
+        domain:
+          type: string
+          description: Доменное имя приватной зоны.
+        readOnly:
+          type: boolean
+          description: Приватная зона доступна только на чтение.
+          readOnly: true
+        state:
+          type: string
+          description: |-
+            Состояние зоны.
+            Возможные значения:
+            creating, updating, deleting, ok, error.
+          readOnly: true
+        description:
+          type: string
+          description: Описание приватной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов приватной зоны.
+        linkedVpcIds:
+          type: array
+          items:
+            type: string
+          description: Список идентификаторов подключенных VPC.
+      description: Приватная зона без записей.
+      required:
+        - projectId
+        - name
+        - domain
+    v1PrivateZoneSoleServiceUpdateBody:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Название приватной зоны.
+        activeState:
+          type: boolean
+          description: Состояние активности приватной зоны.
+        description:
+          type: string
+          description: Описание приватной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов приватной зоны.
+        linkedVpcIds:
+          type: array
+          items:
+            type: string
+          description: Список подключенных VPC.
+      description: Описание параметров запроса для обновления приватной зоны.
+    v1PublicRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор записи публичной зоны .
+          readOnly: true
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        name:
+          type: string
+          description: Наименование записи публичной зоны .
+        type:
+          type: string
+          description: |-
+            Тип записи публичной зоны .
+            Возможные значения:
+            a, aaaa, srv, cname, mx, ns, spf, txt, caa.
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи публичной зоны .
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи публичной зоны в кеше.
+        readOnly:
+          type: boolean
+          description: Признак доступности записи публичной зоны  только на чтение.
+          readOnly: true
+        description:
+          type: string
+          description: Описание записи публичной зоны .
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов записи публичной зоны .
+        wildcard:
+          type: boolean
+          description: Признак wildcard-записи.
+        gslbData:
+          $ref: "#/components/schemas/v1GslbData"
+      description: Запись публичной зоны.
+      required:
+        - name
+        - type
+        - values
+        - ttl
+    v1PublicRecordSole:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор записи публичной зоны .
+          readOnly: true
+        publicZoneId:
+          type: string
+          description: Идентификатор публичной зоны.
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        name:
+          type: string
+          description: Наименование записи публичной зоны .
+        type:
+          type: string
+          description: |-
+            Тип записи публичной зоны .
+            Возможные значения:
+            a, aaaa, srv, cname, mx, ns, spf, txt, caa.
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи публичной зоны .
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи публичной зоны в кеше.
+        readOnly:
+          type: boolean
+          description: Признак доступности записи публичной зоны  только на чтение.
+          readOnly: true
+        description:
+          type: string
+          description: Описание записи публичной зоны .
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов записи публичной зоны .
+        wildcard:
+          type: boolean
+          description: Признак wildcard-записи.
+        gslbData:
+          $ref: "#/components/schemas/v1GslbData"
+      description: Запись публичной зоны.
+      required:
+        - publicZoneId
+        - name
+        - type
+        - values
+        - ttl
+    v1PublicRecordSoleServiceUpdateBody:
+      type: object
+      properties:
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи публичной зоны .
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи публичной зоны в кеше.
+        description:
+          type: string
+          description: Описание записи публичной зоны .
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов записи публичной зоны .
+        gslbData:
+          $ref: "#/components/schemas/v1GslbData"
+      description: Описание параметров запроса для обновления записи публичной зоны .
+    v1PublicZone:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор публичной зоны.
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+        name:
+          type: string
+          description: Название публичной зоны.
+        domain:
+          type: string
+          description: Доменное имя публичной зоны.
+        readOnly:
+          type: boolean
+          description: Публичная зона доступна только на чтение.
+          readOnly: true
+        state:
+          type: string
+          description: |-
+            Состояние публичной зоны.
+            Возможные значения:
+            creating, updating, deleting, ok, error.
+          readOnly: true
+        description:
+          type: string
+          description: Описание публичной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов публичной зоны.
+        confirmState:
+          type: string
+          description: |-
+            Состояние подтверждения публичной зоны.
+            Возможные значения:
+            not_confirm, confirm, delegated, lost, not_unique.
+          readOnly: true
+        verificationToken:
+          type: string
+          description: Токен подтверждения публичной зоны.
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PublicRecord"
+          description: Список записей публичных зон.
+      description: Публичная зона.
+      required:
+        - projectId
+        - name
+        - domain
+    v1PublicZoneServiceUpdateBody:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Название публичной зоны.
+        activeState:
+          type: boolean
+          description: Состояние активности публичной зоны.
+        description:
+          type: string
+          description: Описание публичной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов публичной зоны.
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/v1PublicRecord"
+          description: Список записей публичных зон.
+        autoUpdateVerificationToken:
+          type: boolean
+          description: >-
+            Флаг автоматического обновления токена подтверждения публичной зоны.
+
+            Если флаг выставлен в true, то при каждом запросе изменений публичной зоны сервис
+
+            проверит токен и, если токен не сгенерирован или устарел, выпустит
+
+            новый, значение которого запишется в поле [verification_token].
+      description: Описание параметров запроса для обновления публичной зоны.
+    v1PublicZoneSole:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор публичной зоны.
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+        name:
+          type: string
+          description: Название публичной зоны.
+        domain:
+          type: string
+          description: Доменное имя публичной зоны.
+        readOnly:
+          type: boolean
+          description: Публичная зона доступна только на чтение.
+          readOnly: true
+        state:
+          type: string
+          description: |-
+            Состояние публичной зоны.
+            Возможные значения:
+            creating, updating, deleting, ok, error.
+          readOnly: true
+        description:
+          type: string
+          description: Описание публичной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов публичной зоны.
+        confirmState:
+          type: string
+          description: |-
+            Состояние подтверждения публичной зоны.
+            Возможные значения:
+            not_confirm, confirm, delegated, lost, not_unique.
+          readOnly: true
+        verificationToken:
+          type: string
+          description: Токен подтверждения публичной зоны.
+      description: Публичная зона без записей.
+      required:
+        - projectId
+        - name
+        - domain
+    v1PublicZoneSoleServiceUpdateBody:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Название публичной зоны.
+        activeState:
+          type: boolean
+          description: Состояние активности публичной зоны.
+        description:
+          type: string
+          description: Описание публичной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов публичной зоны.
+        autoUpdateVerificationToken:
+          type: boolean
+          description: >-
+            Флаг автоматического обновления токена подтверждения публичной зоны.
+
+            Если флаг выставлен в true, то при каждом запросе изменений публичной зоны сервис
+
+            проверит токен и, если токен не сгенерирован или устарел, выпустит
+
+            новый, значение которого запишется в поле [verification_token].
+      description: Описание параметров запроса для обновления публичной зоны.
+    v1ReverseRecord:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор записи обратной зоны.
+        reverseZoneId:
+          type: string
+          description: Идентификатор обратной зоны.
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        state:
+          type: string
+          description: |-
+            Состояние записи обратной зоны.
+            Возможные значения:
+            creating, updating, deleting, ok, error.
+          readOnly: true
+        name:
+          type: string
+          description: Наименование записи обратной зоны.
+        type:
+          type: string
+          description: |-
+            Тип записи обратной зоны.
+            Возможные значения: ptr.
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи обратной зоны.
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи в кеше.
+        readOnly:
+          type: boolean
+          description: Признак доступности записи только на чтение.
+          readOnly: true
+      title: Модель записи обратной зоны
+      required:
+        - reverseZoneId
+        - name
+        - type
+        - values
+        - ttl
+    v1ReverseRecordServiceUpdateBody:
+      type: object
+      properties:
+        values:
+          type: array
+          items:
+            type: string
+          description: Значения записи обратной зоны.
+        ttl:
+          type: integer
+          format: int64
+          description: Время жизни записи обратной зоны в кеше.
+      description: Описание параметров запроса для обновления записи обратной зоны.
+      required:
+        - values
+        - ttl
+    v1ReverseZone:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор обратной зоны.
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+          readOnly: true
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+        domain:
+          type: string
+          description: Доменное имя обратной зоны.
+          readOnly: true
+        subnetId:
+          type: string
+          description: Идентификатор подсети.
+        vpcId:
+          type: string
+          description: Идентификатор VPC.
+        readOnly:
+          type: boolean
+          description: Обратная зона доступна только на чтение.
+          readOnly: true
+        state:
+          type: string
+          description: |-
+            Состояние обратной зоны.
+            Возможные значения:
+            creating, updating, deleting, ok, error.
+          readOnly: true
+        description:
+          type: string
+          description: Описание обратной зоны.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов обратной зоны.
+        role:
+          type: string
+          description: |-
+            Роль обратной зоны.
+            Возможные значения:
+            private, public.
+            Все обратные зоны, которые создаются
+            через Public API, имеют роль private.
+          readOnly: true
+      title: Модель обратной зоны
+      required:
+        - projectId
+        - subnetId
+        - vpcId
+    v1ReverseZoneServiceUpdateBody:
+      type: object
+      properties:
+        activeState:
+          type: boolean
+          description: Состояние активности обратной зоны.
+        description:
+          type: string
+          description: Пользовательское описание.
+        tags:
+          type: array
+          items:
+            type: string
+          description: Список тегов обратной зоны.
+      description: Описание параметров запроса для обновления обратной зоны.
+    v1UsedIn:
+      type: object
+      properties:
+        linkId:
+          type: string
+          description: Идентификатор связи.
+          readOnly: true
+        productCode:
+          type: string
+          description: Код продукта.
+          readOnly: true
+      description: Кем используется DNS-сервер.
+    v1VpcDefinition:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Идентификатор VPC.
+        createAt:
+          type: string
+          format: date-time
+          description: Время создания.
+        updatedAt:
+          type: string
+          format: date-time
+          description: Последнее время обновления.
+        projectId:
+          type: string
+          description: Идентификатор проекта.
+      description: Определение VPC.
