@@ -19,17 +19,21 @@ func (c *Client) ListRecords(ctx context.Context, zoneID string) ([]PublicRecord
 	q.Set("publicZoneId", zoneID)
 
 	var all []PublicRecord
+
 	for {
 		var page ListRecordsResponse
 		if err := c.do(ctx, http.MethodGet, "/v1/publicRecordsSole", q, nil, &page); err != nil {
 			return nil, fmt.Errorf("list records in zone %s: %w", zoneID, err)
 		}
+
 		all = append(all, page.Records...)
 		if page.NextPageToken == "" {
 			break
 		}
+
 		q.Set("pageToken", page.NextPageToken)
 	}
+
 	return all, nil
 }
 
@@ -40,15 +44,18 @@ func (c *Client) FindTXTRecord(ctx context.Context, zoneID, name string) (*Publi
 	if err != nil {
 		return nil, err
 	}
+
 	for i := range records {
 		r := &records[i]
 		if !strings.EqualFold(r.Type, RecordTypeTXT) {
 			continue
 		}
+
 		if r.Name == name {
 			return r, nil
 		}
 	}
+
 	return nil, nil
 }
 
@@ -58,6 +65,7 @@ func (c *Client) GetRecord(ctx context.Context, recordID string) (*PublicRecord,
 	if err := c.do(ctx, http.MethodGet, "/v1/publicRecordsSole/"+recordID, nil, nil, &r); err != nil {
 		return nil, fmt.Errorf("get record %s: %w", recordID, err)
 	}
+
 	return &r, nil
 }
 
@@ -68,6 +76,7 @@ func (c *Client) CreateRecord(ctx context.Context, req CreateRecordRequest) (*Op
 	if err := c.do(ctx, http.MethodPost, "/v1/publicRecordsSole", nil, req, &op); err != nil {
 		return nil, err
 	}
+
 	return &op, nil
 }
 
@@ -77,6 +86,7 @@ func (c *Client) UpdateRecord(ctx context.Context, recordID string, req UpdateRe
 	if err := c.do(ctx, http.MethodPatch, "/v1/publicRecordsSole/"+recordID, nil, req, &op); err != nil {
 		return nil, err
 	}
+
 	return &op, nil
 }
 
@@ -86,6 +96,7 @@ func (c *Client) DeleteRecord(ctx context.Context, recordID string) (*Operation,
 	if err := c.do(ctx, http.MethodDelete, "/v1/publicRecordsSole/"+recordID, nil, nil, &op); err != nil {
 		return nil, err
 	}
+
 	return &op, nil
 }
 
@@ -96,10 +107,12 @@ func (c *Client) CreateRecordAndWait(ctx context.Context, req CreateRecordReques
 	if err != nil {
 		return "", err
 	}
+
 	final, err := c.WaitForOperation(ctx, op.ID)
 	if err != nil {
 		return "", err
 	}
+
 	return final.ResourceID, nil
 }
 
@@ -109,7 +122,9 @@ func (c *Client) UpdateRecordAndWait(ctx context.Context, recordID string, req U
 	if err != nil {
 		return err
 	}
+
 	_, err = c.WaitForOperation(ctx, op.ID)
+
 	return err
 }
 
@@ -122,8 +137,11 @@ func (c *Client) DeleteRecordAndWait(ctx context.Context, recordID string) error
 		if IsNotFound(err) {
 			return nil
 		}
+
 		return err
 	}
+
 	_, err = c.WaitForOperation(ctx, op.ID)
+
 	return err
 }

@@ -22,8 +22,10 @@ import (
 func newFakeServer(t *testing.T, apiHandler http.HandlerFunc) (*Client, *atomic.Int32, *atomic.Int32) {
 	t.Helper()
 
-	var authCalls atomic.Int32
-	var apiCalls atomic.Int32
+	var (
+		authCalls atomic.Int32
+		apiCalls  atomic.Int32
+	)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth", func(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +60,7 @@ func newFakeServer(t *testing.T, apiHandler http.HandlerFunc) (*Client, *atomic.
 		OperationPollInterval: DefaultOperationPollInterval,
 		OperationTimeout:      DefaultOperationTimeout,
 	}
+
 	return c, &apiCalls, &authCalls
 }
 
@@ -86,6 +89,7 @@ func TestClient_do_RetriesOn401(t *testing.T) {
 
 	c, apiCalls, authCalls := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		seen.Add(1)
+
 		switch seen.Load() {
 		case 1:
 			// First attempt: server says token is invalid.
@@ -192,9 +196,11 @@ func TestParseAPIError(t *testing.T) {
 	}{
 		{"empty", "", nil},
 		{"not envelope", `{"foo":"bar"}`, nil},
-		{"valid",
+		{
+			"valid",
 			`{"code":6,"message":"already exists"}`,
-			&APIError{Code: 6, Message: "already exists", HTTPStatus: 409}},
+			&APIError{Code: 6, Message: "already exists", HTTPStatus: 409},
+		},
 	}
 
 	for _, tc := range cases {
@@ -204,6 +210,7 @@ func TestParseAPIError(t *testing.T) {
 				assert.Nil(t, got)
 				return
 			}
+
 			require.NotNil(t, got)
 			assert.Equal(t, tc.want.Code, got.Code)
 			assert.Equal(t, tc.want.Message, got.Message)

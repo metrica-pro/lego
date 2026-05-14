@@ -147,6 +147,7 @@ func NewDNSProviderConfig(config *Config) (*DNSProvider, error) {
 	if config.PollingInterval > 0 {
 		client.OperationPollInterval = config.PollingInterval
 	}
+
 	if config.OperationTimeout > 0 {
 		client.OperationTimeout = config.OperationTimeout
 	}
@@ -175,6 +176,7 @@ func (d *DNSProvider) Present(ctx context.Context, domain, token, keyAuth string
 	if err != nil {
 		return fmt.Errorf("cloudruevolution: lookup zone for %q: %w", authZone, err)
 	}
+
 	if zone == nil {
 		return fmt.Errorf("cloudruevolution: zone %q not found in project %s",
 			dns01.UnFqdn(authZone), d.config.ProjectID)
@@ -190,6 +192,7 @@ func (d *DNSProvider) Present(ctx context.Context, domain, token, keyAuth string
 	d.recordsMu.Lock()
 	d.records[token] = recordState{recordID: recordID, value: info.Value}
 	d.recordsMu.Unlock()
+
 	return nil
 }
 
@@ -213,14 +216,17 @@ func (d *DNSProvider) upsertTXT(ctx context.Context, zoneID, name, value string)
 		if err == nil {
 			return recordID, nil
 		}
+
 		if !internal.IsAlreadyExists(err) {
 			return "", fmt.Errorf("create record: %w", err)
 		}
+
 		// Lost the race; refetch and fall through to the merge path.
 		existing, err = d.client.FindTXTRecord(ctx, zoneID, name)
 		if err != nil {
 			return "", fmt.Errorf("refetch after 409: %w", err)
 		}
+
 		if existing == nil {
 			return "", errors.New("create returned 409 but record disappeared")
 		}
@@ -237,6 +243,7 @@ func (d *DNSProvider) upsertTXT(ctx context.Context, zoneID, name, value string)
 	}); err != nil {
 		return "", fmt.Errorf("update record: %w", err)
 	}
+
 	return existing.ID, nil
 }
 
@@ -258,63 +265,82 @@ func (d *DNSProvider) CleanUp(ctx context.Context, domain, token, keyAuth string
 	if err != nil {
 		return fmt.Errorf("cloudruevolution: lookup zone for %q: %w", authZone, err)
 	}
+
 	if zone == nil {
 		return nil // Nothing to clean up.
 	}
-	relName := relativeName(info.EffectiveFQDN, authZone)
 
-	d.recordsMu.Lock()
-	state, hasState := d.records[token]
-	if hasState {
-		delete(d.records, token)
-	}
-	d.recordsMu.Unlock()
-
-	var recordID, value string
-	if hasState {
-		recordID = state.recordID
-		value = state.value
-	} else {
-		value = info.Value
+	recordID, value, err := d.resolveCleanupTarget(ctx, zone.ID, relativeName(info.EffectiveFQDN, authZone), info.Value, token)
+	if err != nil {
+		return err
 	}
 
 	if recordID == "" {
-		existing, err := d.client.FindTXTRecord(ctx, zone.ID, relName)
-		if err != nil {
-			return fmt.Errorf("cloudruevolution: cleanup lookup: %w", err)
-		}
-		if existing == nil {
-			return nil
-		}
-		recordID = existing.ID
+		return nil
 	}
 
+	return d.removeValueFromRecord(ctx, recordID, value)
+}
+
+// resolveCleanupTarget returns the recordID and value to remove for CleanUp.
+// It uses the in-memory token→state map when available, falling back to a
+// zone-wide list-and-match. An empty recordID is a successful "nothing to do".
+func (d *DNSProvider) resolveCleanupTarget(ctx context.Context, zoneID, relName, fallbackValue, token string) (string, string, error) {
+	d.recordsMu.Lock()
+
+	state, ok := d.records[token]
+	if ok {
+		delete(d.records, token)
+	}
+
+	d.recordsMu.Unlock()
+
+	if ok && state.recordID != "" {
+		return state.recordID, state.value, nil
+	}
+
+	existing, err := d.client.FindTXTRecord(ctx, zoneID, relName)
+	if err != nil {
+		return "", "", fmt.Errorf("cloudruevolution: cleanup lookup: %w", err)
+	}
+
+	if existing == nil {
+		return "", "", nil
+	}
+
+	return existing.ID, fallbackValue, nil
+}
+
+// removeValueFromRecord fetches the current rrset, drops the supplied value,
+// and either deletes the record (last value removed) or patches it.
+// not-found responses are treated as success.
+func (d *DNSProvider) removeValueFromRecord(ctx context.Context, recordID, value string) error {
 	rec, err := d.client.GetRecord(ctx, recordID)
 	if err != nil {
 		if internal.IsNotFound(err) {
 			return nil
 		}
+
 		return fmt.Errorf("cloudruevolution: cleanup get %s: %w", recordID, err)
 	}
 
 	remaining := filterOut(rec.Values, value)
 
 	if len(remaining) == 0 {
-		if err := d.client.DeleteRecordAndWait(ctx, recordID); err != nil {
-			if internal.IsNotFound(err) {
-				return nil
-			}
-			return fmt.Errorf("cloudruevolution: delete %s: %w", recordID, err)
+		if delErr := d.client.DeleteRecordAndWait(ctx, recordID); delErr != nil && !internal.IsNotFound(delErr) {
+			return fmt.Errorf("cloudruevolution: delete %s: %w", recordID, delErr)
 		}
+
 		return nil
 	}
 
-	if err := d.client.UpdateRecordAndWait(ctx, recordID, internal.UpdateRecordRequest{
+	if patchErr := d.client.UpdateRecordAndWait(ctx, recordID, internal.UpdateRecordRequest{
 		Values: remaining,
 		TTL:    rec.TTL,
-	}); err != nil {
-		return fmt.Errorf("cloudruevolution: cleanup patch %s: %w", recordID, err)
+	}); patchErr != nil {
+		return fmt.Errorf("cloudruevolution: cleanup patch %s: %w", recordID, patchErr)
 	}
+
 	return nil
 }
 
@@ -324,25 +350,30 @@ func (d *DNSProvider) CleanUp(ctx context.Context, domain, token, keyAuth string
 // is "". The Cloud.ru API requires zone-relative names without trailing dots.
 func relativeName(fqdn, authZone string) string {
 	host := strings.TrimSuffix(fqdn, ".")
+
 	zone := strings.TrimSuffix(authZone, ".")
 	if strings.EqualFold(host, zone) {
 		return ""
 	}
+
 	suffix := "." + zone
 	if strings.HasSuffix(strings.ToLower(host), strings.ToLower(suffix)) {
 		return host[:len(host)-len(suffix)]
 	}
+
 	return host
 }
 
 // filterOut returns a new slice with all occurrences of target removed.
 func filterOut(values []string, target string) []string {
 	out := make([]string, 0, len(values))
+
 	for _, v := range values {
 		if v != target {
 			out = append(out, v)
 		}
 	}
+
 	return out
 }
 

@@ -83,13 +83,9 @@ func (c *Client) ProjectID() string {
 // body decodes to the canonical envelope, otherwise as
 // *errutils.UnexpectedStatusCodeError.
 func (c *Client) do(ctx context.Context, method, path string, query url.Values, reqBody, respOut any) error {
-	var rawBody []byte
-	if reqBody != nil {
-		var err error
-		rawBody, err = json.Marshal(reqBody)
-		if err != nil {
-			return fmt.Errorf("marshal request: %w", err)
-		}
+	rawBody, err := encodeRequestBody(reqBody)
+	if err != nil {
+		return err
 	}
 
 	endpoint, err := c.buildURL(path, query)
@@ -98,49 +94,83 @@ func (c *Client) do(ctx context.Context, method, path string, query url.Values, 
 	}
 
 	for attempt := range 2 {
-		req, err := c.newRequest(ctx, method, endpoint, rawBody)
-		if err != nil {
+		retry, err := c.attempt(ctx, method, endpoint, rawBody, respOut, attempt)
+		if !retry {
 			return err
 		}
+	}
+	// Both attempts hit 401 — final attempt's handler already returned, so
+	// reaching here is unexpected.
+	return errors.New("cloudruevolution: 401 after retry")
+}
 
-		resp, err := c.HTTPClient.Do(req)
-		if err != nil {
-			return errutils.NewHTTPDoError(req, err)
+// attempt performs a single iteration of do. retry=true means the caller
+// should loop again; retry=false means err is the final outcome.
+func (c *Client) attempt(ctx context.Context, method, endpoint string, rawBody []byte, respOut any, attempt int) (bool, error) {
+	req, err := c.newRequest(ctx, method, endpoint, rawBody)
+	if err != nil {
+		return false, err
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return false, errutils.NewHTTPDoError(req, err)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+
+	_ = resp.Body.Close()
+	if err != nil {
+		return false, errutils.NewReadResponseError(req, resp.StatusCode, err)
+	}
+
+	// Retry once on 401: server rejected our token. Drop the cache so the
+	// next newRequest fetches a fresh one.
+	if resp.StatusCode == http.StatusUnauthorized && attempt == 0 {
+		c.identity.invalidate()
+		return true, nil
+	}
+
+	return false, c.handleResponse(req, resp, body, respOut)
+}
+
+// handleResponse interprets the response body. 2xx with a sink unmarshals it;
+// non-2xx maps to APIError when the envelope is recognized, otherwise to
+// errutils.UnexpectedStatusCodeError.
+func (c *Client) handleResponse(req *http.Request, resp *http.Response, body []byte, respOut any) error {
+	if resp.StatusCode/100 != 2 {
+		if apiErr := parseAPIError(body, resp.StatusCode); apiErr != nil {
+			return apiErr
 		}
 
-		body, err := io.ReadAll(resp.Body)
-		_ = resp.Body.Close()
-		if err != nil {
-			return errutils.NewReadResponseError(req, resp.StatusCode, err)
-		}
+		resp.Body = io.NopCloser(bytes.NewReader(body))
 
-		// Retry once on 401: server rejected our token. Drop the cache so the
-		// next newRequest fetches a fresh one.
-		if resp.StatusCode == http.StatusUnauthorized && attempt == 0 {
-			c.identity.invalidate()
-			continue
-		}
+		return errutils.NewUnexpectedResponseStatusCodeError(req, resp)
+	}
 
-		if resp.StatusCode/100 != 2 {
-			if apiErr := parseAPIError(body, resp.StatusCode); apiErr != nil {
-				return apiErr
-			}
-			// Reconstruct response shape for errutils.
-			resp.Body = io.NopCloser(bytes.NewReader(body))
-			return errutils.NewUnexpectedResponseStatusCodeError(req, resp)
-		}
-
-		if respOut == nil {
-			return nil
-		}
-
-		if err := json.Unmarshal(body, respOut); err != nil {
-			return errutils.NewUnmarshalError(req, resp.StatusCode, body, err)
-		}
+	if respOut == nil {
 		return nil
 	}
 
-	return errors.New("cloudruevolution: 401 after retry")
+	if err := json.Unmarshal(body, respOut); err != nil {
+		return errutils.NewUnmarshalError(req, resp.StatusCode, body, err)
+	}
+
+	return nil
+}
+
+// encodeRequestBody marshals reqBody when non-nil; otherwise returns (nil, nil).
+func encodeRequestBody(reqBody any) ([]byte, error) {
+	if reqBody == nil {
+		return nil, nil
+	}
+
+	raw, err := json.Marshal(reqBody)
+	if err != nil {
+		return nil, fmt.Errorf("marshal request: %w", err)
+	}
+
+	return raw, nil
 }
 
 // newRequest builds an authenticated HTTP request.
@@ -162,10 +192,13 @@ func (c *Client) newRequest(ctx context.Context, method, endpoint string, body [
 
 	req.Header.Set("Authorization", "Bearer "+tok.AccessToken)
 	req.Header.Set("Accept", "application/json")
+
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
+
 	useragent.SetHeader(req.Header)
+
 	return req, nil
 }
 
@@ -175,10 +208,12 @@ func (c *Client) buildURL(path string, query url.Values) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("parse path %q: %w", path, err)
 	}
+
 	u := c.apiBaseURL.ResolveReference(ref)
 	if len(query) > 0 {
 		u.RawQuery = query.Encode()
 	}
+
 	return u.String(), nil
 }
 
@@ -188,14 +223,18 @@ func parseAPIError(body []byte, status int) *APIError {
 	if len(bytes.TrimSpace(body)) == 0 {
 		return nil
 	}
+
 	var e APIError
-	if err := json.Unmarshal(body, &e); err != nil {
-		return nil
+	if json.Unmarshal(body, &e) != nil {
+		return nil //nolint:nilerr // unparseable body is intentionally a non-envelope signal
 	}
+
 	if e.Code == 0 && e.Message == "" {
 		return nil
 	}
+
 	e.HTTPStatus = status
+
 	return &e
 }
 
@@ -213,5 +252,6 @@ func IsNotFound(err error) bool {
 	if !errors.As(err, &apiErr) {
 		return false
 	}
+
 	return apiErr.Code == ErrCodeNotFound || apiErr.Code == ErrCodeFailedPrecondition
 }
