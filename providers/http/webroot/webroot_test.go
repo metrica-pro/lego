@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-acme/lego/v5/challenge/http01"
+	"github.com/metrica-pro/lego/v5/challenge/http01"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

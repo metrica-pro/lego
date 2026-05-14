@@ -3,7 +3,7 @@ package configuration
 import (
 	"time"
 
-	"github.com/go-acme/lego/v5/certcrypto"
+	"github.com/metrica-pro/lego/v5/certcrypto"
 )
 
 type Configuration struct {

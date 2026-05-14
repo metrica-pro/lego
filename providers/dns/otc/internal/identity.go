@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
 )
 
 // DefaultIdentityEndpoint the default API identity endpoint.

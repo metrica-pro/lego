@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/go-acme/lego/v5/certcrypto"
-	"github.com/go-acme/lego/v5/cmd/internal/configuration"
-	"github.com/go-acme/lego/v5/cmd/internal/flags"
-	"github.com/go-acme/lego/v5/cmd/internal/prompt"
-	"github.com/go-acme/lego/v5/cmd/internal/root"
-	"github.com/go-acme/lego/v5/cmd/internal/storage"
-	"github.com/go-acme/lego/v5/lego"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/certcrypto"
+	"github.com/metrica-pro/lego/v5/cmd/internal/configuration"
+	"github.com/metrica-pro/lego/v5/cmd/internal/flags"
+	"github.com/metrica-pro/lego/v5/cmd/internal/prompt"
+	"github.com/metrica-pro/lego/v5/cmd/internal/root"
+	"github.com/metrica-pro/lego/v5/cmd/internal/storage"
+	"github.com/metrica-pro/lego/v5/lego"
+	"github.com/metrica-pro/lego/v5/log"
 	"github.com/urfave/cli/v3"
 )
 

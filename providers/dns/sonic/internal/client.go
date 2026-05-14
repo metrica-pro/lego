@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
 )
 
 const baseURL = "https://public-api.sonic.net/dyndns"

@@ -3,7 +3,7 @@ package registration
 import (
 	"crypto"
 
-	"github.com/go-acme/lego/v5/acme"
+	"github.com/metrica-pro/lego/v5/acme"
 )
 
 // User interface is to be implemented by users of this library.

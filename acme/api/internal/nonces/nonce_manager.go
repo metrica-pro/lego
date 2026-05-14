@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/go-acme/lego/v5/acme/api/internal/sender"
+	"github.com/metrica-pro/lego/v5/acme/api/internal/sender"
 	"github.com/go-jose/go-jose/v4"
 )
 

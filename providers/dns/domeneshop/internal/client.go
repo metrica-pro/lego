@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
 )
 
 const defaultBaseURL string = "https://api.domeneshop.no/v0"

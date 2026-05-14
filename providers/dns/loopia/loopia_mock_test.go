@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/go-acme/lego/v5/providers/dns/loopia/internal"
+	"github.com/metrica-pro/lego/v5/providers/dns/loopia/internal"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"

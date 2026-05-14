@@ -6,17 +6,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/challenge/dns01"
-	"github.com/go-acme/lego/v5/challenge/dnspersist01"
-	"github.com/go-acme/lego/v5/challenge/http01"
-	"github.com/go-acme/lego/v5/challenge/tlsalpn01"
-	"github.com/go-acme/lego/v5/cmd/internal/configuration"
-	"github.com/go-acme/lego/v5/lego"
-	"github.com/go-acme/lego/v5/providers/dns"
-	"github.com/go-acme/lego/v5/providers/http/memcached"
-	"github.com/go-acme/lego/v5/providers/http/s3"
-	"github.com/go-acme/lego/v5/providers/http/webroot"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/challenge/dnspersist01"
+	"github.com/metrica-pro/lego/v5/challenge/http01"
+	"github.com/metrica-pro/lego/v5/challenge/tlsalpn01"
+	"github.com/metrica-pro/lego/v5/cmd/internal/configuration"
+	"github.com/metrica-pro/lego/v5/lego"
+	"github.com/metrica-pro/lego/v5/providers/dns"
+	"github.com/metrica-pro/lego/v5/providers/http/memcached"
+	"github.com/metrica-pro/lego/v5/providers/http/s3"
+	"github.com/metrica-pro/lego/v5/providers/http/webroot"
 )
 
 func setupChallenges(client *lego.Client, chlgConfig *configuration.Challenge, networkStack challenge.NetworkStack) error {

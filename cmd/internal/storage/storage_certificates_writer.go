@@ -10,8 +10,8 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/go-acme/lego/v5/certcrypto"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/certcrypto"
+	"github.com/metrica-pro/lego/v5/log"
 )
 
 const filePerm os.FileMode = 0o600

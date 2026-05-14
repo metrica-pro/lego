@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-acme/lego/v5/acme"
-	"github.com/go-acme/lego/v5/acme/api/internal/sender"
+	"github.com/metrica-pro/lego/v5/acme"
+	"github.com/metrica-pro/lego/v5/acme/api/internal/sender"
 )
 
 type AccountService service

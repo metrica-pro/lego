@@ -9,7 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-acme/lego/v5/internal/tester/servermock"
+	"github.com/metrica-pro/lego/v5/internal/tester/servermock"
 	"github.com/liquidweb/liquidweb-go/network"
 	"github.com/liquidweb/liquidweb-go/types"
 )

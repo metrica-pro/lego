@@ -11,8 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-acme/lego/v5/certcrypto"
-	"github.com/go-acme/lego/v5/e2e/loader"
+	"github.com/metrica-pro/lego/v5/certcrypto"
+	"github.com/metrica-pro/lego/v5/e2e/loader"
 	"github.com/stretchr/testify/require"
 )
 

@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
 )
 
 // defaultBaseURL for reaching the jSON-based API-Endpoint of netcup.

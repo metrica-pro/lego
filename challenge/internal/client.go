@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-acme/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/challenge"
 	"github.com/miekg/dns"
 )
 

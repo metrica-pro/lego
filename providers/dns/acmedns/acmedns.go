@@ -8,10 +8,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/challenge/dns01"
-	"github.com/go-acme/lego/v5/platform/env"
-	"github.com/go-acme/lego/v5/providers/dns/acmedns/internal"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/platform/env"
+	"github.com/metrica-pro/lego/v5/providers/dns/acmedns/internal"
 	"github.com/nrdcg/goacmedns"
 	"github.com/nrdcg/goacmedns/storage"
 )

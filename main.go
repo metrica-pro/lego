@@ -7,8 +7,8 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/go-acme/lego/v5/cmd"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/cmd"
+	"github.com/metrica-pro/lego/v5/log"
 	"github.com/urfave/cli/v3"
 )
 

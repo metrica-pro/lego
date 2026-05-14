@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/log"
 )
 
 // GetLink get a rel into the `Link` header.

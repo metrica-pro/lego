@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-acme/lego/v5/cmd/internal/configuration"
-	"github.com/go-acme/lego/v5/cmd/internal/flags"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/cmd/internal/configuration"
+	"github.com/metrica-pro/lego/v5/cmd/internal/flags"
+	"github.com/metrica-pro/lego/v5/log"
 	"github.com/mattn/go-isatty"
 	"github.com/urfave/cli/v3"
 	"gitlab.com/greyxor/slogor"

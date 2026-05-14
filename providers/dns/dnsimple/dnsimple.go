@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"github.com/dnsimple/dnsimple-go/v4/dnsimple"
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/challenge/dns01"
-	"github.com/go-acme/lego/v5/internal/useragent"
-	"github.com/go-acme/lego/v5/platform/env"
-	"github.com/go-acme/lego/v5/providers/dns/internal/clientdebug"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/internal/useragent"
+	"github.com/metrica-pro/lego/v5/platform/env"
+	"github.com/metrica-pro/lego/v5/providers/dns/internal/clientdebug"
 	"golang.org/x/oauth2"
 )
 

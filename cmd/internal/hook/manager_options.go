@@ -3,7 +3,7 @@ package hook
 import (
 	"time"
 
-	"github.com/go-acme/lego/v5/cmd/internal/storage"
+	"github.com/metrica-pro/lego/v5/cmd/internal/storage"
 )
 
 type Option func(m *Manager)

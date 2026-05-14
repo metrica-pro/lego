@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/log"
 	"github.com/mattn/go-zglob"
 )
 

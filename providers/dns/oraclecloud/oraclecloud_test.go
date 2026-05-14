@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/tester"
-	"github.com/go-acme/lego/v5/internal/tester/servermock"
+	"github.com/metrica-pro/lego/v5/internal/tester"
+	"github.com/metrica-pro/lego/v5/internal/tester/servermock"
 	"github.com/nrdcg/oci-go-sdk/common/v1065"
 	"github.com/stretchr/testify/require"
 )

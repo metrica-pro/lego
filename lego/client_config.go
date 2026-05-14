@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-acme/lego/v5/certificate"
-	"github.com/go-acme/lego/v5/registration"
+	"github.com/metrica-pro/lego/v5/certificate"
+	"github.com/metrica-pro/lego/v5/registration"
 )
 
 const (

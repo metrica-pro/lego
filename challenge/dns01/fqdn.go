@@ -3,7 +3,7 @@ package dns01
 import (
 	"iter"
 
-	"github.com/go-acme/lego/v5/challenge/internal"
+	"github.com/metrica-pro/lego/v5/challenge/internal"
 	"github.com/miekg/dns"
 )
 

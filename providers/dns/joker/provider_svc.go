@@ -6,11 +6,11 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/challenge/dns01"
-	"github.com/go-acme/lego/v5/platform/env"
-	"github.com/go-acme/lego/v5/providers/dns/internal/clientdebug"
-	"github.com/go-acme/lego/v5/providers/dns/joker/internal/svc"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/platform/env"
+	"github.com/metrica-pro/lego/v5/providers/dns/internal/clientdebug"
+	"github.com/metrica-pro/lego/v5/providers/dns/joker/internal/svc"
 )
 
 var _ challenge.ProviderTimeout = (*svcProvider)(nil)

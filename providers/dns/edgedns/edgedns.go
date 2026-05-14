@@ -13,10 +13,10 @@ import (
 	edgegriddns "github.com/akamai/AkamaiOPEN-edgegrid-golang/v13/pkg/dns"
 	"github.com/akamai/AkamaiOPEN-edgegrid-golang/v13/pkg/edgegrid"
 	"github.com/akamai/AkamaiOPEN-edgegrid-golang/v13/pkg/session"
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/challenge/dns01"
-	"github.com/go-acme/lego/v5/internal/ptr"
-	"github.com/go-acme/lego/v5/platform/env"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/internal/ptr"
+	"github.com/metrica-pro/lego/v5/platform/env"
 )
 
 // Environment variables names.

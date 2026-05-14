@@ -12,11 +12,11 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/go-acme/lego/v5/acme"
-	"github.com/go-acme/lego/v5/acme/api/internal/nonces"
-	"github.com/go-acme/lego/v5/acme/api/internal/secure"
-	"github.com/go-acme/lego/v5/acme/api/internal/sender"
-	"github.com/go-acme/lego/v5/internal/wait"
+	"github.com/metrica-pro/lego/v5/acme"
+	"github.com/metrica-pro/lego/v5/acme/api/internal/nonces"
+	"github.com/metrica-pro/lego/v5/acme/api/internal/secure"
+	"github.com/metrica-pro/lego/v5/acme/api/internal/sender"
+	"github.com/metrica-pro/lego/v5/internal/wait"
 )
 
 type service struct {

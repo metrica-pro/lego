@@ -1,4 +1,4 @@
-module github.com/go-acme/lego/v5
+module github.com/metrica-pro/lego/v5
 
 go 1.25.0
 

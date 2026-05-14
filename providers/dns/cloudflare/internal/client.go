@@ -17,9 +17,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
-	"github.com/go-acme/lego/v5/internal/useragent"
-	"github.com/go-acme/lego/v5/providers/dns/internal/clientdebug"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/internal/useragent"
+	"github.com/metrica-pro/lego/v5/providers/dns/internal/clientdebug"
 )
 
 const defaultBaseURL = "https://api.cloudflare.com/client/v4"

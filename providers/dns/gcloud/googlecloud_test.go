@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/tester"
-	"github.com/go-acme/lego/v5/internal/tester/servermock"
+	"github.com/metrica-pro/lego/v5/internal/tester"
+	"github.com/metrica-pro/lego/v5/internal/tester/servermock"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/dns/v1"

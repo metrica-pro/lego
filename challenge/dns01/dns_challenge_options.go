@@ -5,8 +5,8 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/go-acme/lego/v5/challenge/internal"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/challenge/internal"
+	"github.com/metrica-pro/lego/v5/log"
 )
 
 // ChallengeOption configures the dns-01 challenge.

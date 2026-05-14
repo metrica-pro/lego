@@ -18,8 +18,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/wait"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/internal/wait"
+	"github.com/metrica-pro/lego/v5/log"
 	"github.com/ldez/grignotin/goenv"
 )
 

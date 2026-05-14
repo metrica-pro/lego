@@ -13,9 +13,9 @@ import (
 	"github.com/go-acme/jdcloud-sdk-go/services/domainservice/apis"
 	jdcclient "github.com/go-acme/jdcloud-sdk-go/services/domainservice/client"
 	domainservice "github.com/go-acme/jdcloud-sdk-go/services/domainservice/models"
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/challenge/dns01"
-	"github.com/go-acme/lego/v5/platform/env"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/platform/env"
 )
 
 // Environment variables names.

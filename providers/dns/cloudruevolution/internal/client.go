@@ -11,9 +11,9 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
-	"github.com/go-acme/lego/v5/internal/useragent"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/internal/useragent"
+	"github.com/metrica-pro/lego/v5/log"
 )
 
 // Default poll cadence and timeout for asynchronous Cloud.ru operations.

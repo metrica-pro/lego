@@ -4,10 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/go-acme/lego/v5/cmd/internal/flags"
-	"github.com/go-acme/lego/v5/cmd/internal/hook"
-	"github.com/go-acme/lego/v5/cmd/internal/storage"
-	"github.com/go-acme/lego/v5/lego"
+	"github.com/metrica-pro/lego/v5/cmd/internal/flags"
+	"github.com/metrica-pro/lego/v5/cmd/internal/hook"
+	"github.com/metrica-pro/lego/v5/cmd/internal/storage"
+	"github.com/metrica-pro/lego/v5/lego"
 	"github.com/urfave/cli/v3"
 )
 

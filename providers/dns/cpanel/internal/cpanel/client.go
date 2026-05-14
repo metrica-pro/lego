@@ -10,8 +10,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
-	"github.com/go-acme/lego/v5/providers/dns/cpanel/internal/shared"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/providers/dns/cpanel/internal/shared"
 )
 
 const statusFailed = 0

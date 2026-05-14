@@ -6,8 +6,8 @@ import (
 	"crypto/rsa"
 	"testing"
 
-	"github.com/go-acme/lego/v5/acme"
-	"github.com/go-acme/lego/v5/internal/tester"
+	"github.com/metrica-pro/lego/v5/acme"
+	"github.com/metrica-pro/lego/v5/internal/tester"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

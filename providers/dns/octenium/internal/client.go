@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
 	querystring "github.com/google/go-querystring/query"
 )
 

@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-acme/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
 	"github.com/stretchr/testify/require"
 )
 

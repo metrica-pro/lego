@@ -10,12 +10,12 @@ import (
 	"time"
 
 	"github.com/cenkalti/backoff/v5"
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/challenge/dns01"
-	"github.com/go-acme/lego/v5/internal/wait"
-	"github.com/go-acme/lego/v5/platform/env"
-	"github.com/go-acme/lego/v5/providers/dns/internal/clientdebug"
-	"github.com/go-acme/lego/v5/providers/dns/nifcloud/internal"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/internal/wait"
+	"github.com/metrica-pro/lego/v5/platform/env"
+	"github.com/metrica-pro/lego/v5/providers/dns/internal/clientdebug"
+	"github.com/metrica-pro/lego/v5/providers/dns/nifcloud/internal"
 )
 
 // Environment variables names.

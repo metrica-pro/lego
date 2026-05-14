@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/go-acme/lego/v5/acme"
-	"github.com/go-acme/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/acme"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
 )
 
 type RequestOption func(*http.Request) error

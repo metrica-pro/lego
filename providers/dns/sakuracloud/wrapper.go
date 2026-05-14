@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/go-acme/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
 	"github.com/sacloud/iaas-api-go"
 	"github.com/sacloud/iaas-api-go/search"
 )

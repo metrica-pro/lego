@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-acme/lego/v5/internal/tester"
+	"github.com/metrica-pro/lego/v5/internal/tester"
 	"github.com/stretchr/testify/require"
 )
 

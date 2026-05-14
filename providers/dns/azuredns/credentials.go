@@ -10,7 +10,7 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore/policy"
 	"github.com/Azure/azure-sdk-for-go/sdk/azidentity"
-	"github.com/go-acme/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
 )
 
 const (

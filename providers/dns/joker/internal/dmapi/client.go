@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-acme/lego/v5/challenge/dns01"
-	"github.com/go-acme/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
 )
 
 const defaultBaseURL = "https://dmapi.joker.com/request/"

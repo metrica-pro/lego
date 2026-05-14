@@ -6,10 +6,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/go-acme/lego/v5/acme"
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/internal/errutils"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/acme"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/log"
 )
 
 // Interface for all challenge solvers to implement.

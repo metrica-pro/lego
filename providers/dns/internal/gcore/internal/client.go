@@ -11,7 +11,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
 )
 
 const defaultBaseURL = "https://api.gcore.com/dns"

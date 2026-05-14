@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-acme/lego/v5/cmd/internal/flags"
-	"github.com/go-acme/lego/v5/cmd/internal/storage"
+	"github.com/metrica-pro/lego/v5/cmd/internal/flags"
+	"github.com/metrica-pro/lego/v5/cmd/internal/storage"
 	"github.com/mattn/go-zglob"
 	"github.com/urfave/cli/v3"
 )

@@ -6,9 +6,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-acme/lego/v5/certificate"
-	"github.com/go-acme/lego/v5/lego"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/certificate"
+	"github.com/metrica-pro/lego/v5/lego"
+	"github.com/metrica-pro/lego/v5/log"
 	"gopkg.in/yaml.v3"
 )
 

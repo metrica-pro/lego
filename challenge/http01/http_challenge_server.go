@@ -12,8 +12,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/log"
 )
 
 var _ challenge.Provider = (*ProviderServer)(nil)

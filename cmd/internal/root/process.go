@@ -9,14 +9,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/cmd/internal"
-	"github.com/go-acme/lego/v5/cmd/internal/configuration"
-	"github.com/go-acme/lego/v5/cmd/internal/hook"
-	"github.com/go-acme/lego/v5/cmd/internal/storage"
-	"github.com/go-acme/lego/v5/internal/dotenv"
-	"github.com/go-acme/lego/v5/lego"
-	"github.com/go-acme/lego/v5/registration"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/cmd/internal"
+	"github.com/metrica-pro/lego/v5/cmd/internal/configuration"
+	"github.com/metrica-pro/lego/v5/cmd/internal/hook"
+	"github.com/metrica-pro/lego/v5/cmd/internal/storage"
+	"github.com/metrica-pro/lego/v5/internal/dotenv"
+	"github.com/metrica-pro/lego/v5/lego"
+	"github.com/metrica-pro/lego/v5/registration"
 )
 
 func Process(ctx context.Context, cfg *configuration.Configuration) error {

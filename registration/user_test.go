@@ -4,7 +4,7 @@ import (
 	"crypto"
 	"crypto/rsa"
 
-	"github.com/go-acme/lego/v5/acme"
+	"github.com/metrica-pro/lego/v5/acme"
 )
 
 type mockUser struct {

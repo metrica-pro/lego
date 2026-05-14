@@ -4,11 +4,11 @@ import (
 	"errors"
 	"net/url"
 
-	"github.com/go-acme/lego/v5/acme"
-	"github.com/go-acme/lego/v5/acme/api"
-	"github.com/go-acme/lego/v5/certificate"
-	"github.com/go-acme/lego/v5/challenge/resolver"
-	"github.com/go-acme/lego/v5/registration"
+	"github.com/metrica-pro/lego/v5/acme"
+	"github.com/metrica-pro/lego/v5/acme/api"
+	"github.com/metrica-pro/lego/v5/certificate"
+	"github.com/metrica-pro/lego/v5/challenge/resolver"
+	"github.com/metrica-pro/lego/v5/registration"
 )
 
 // Client is the user-friendly way to ACME.

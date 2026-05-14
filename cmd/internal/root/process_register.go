@@ -6,14 +6,14 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/go-acme/lego/v5/acme"
-	"github.com/go-acme/lego/v5/cmd/internal/configuration"
-	"github.com/go-acme/lego/v5/cmd/internal/prompt"
-	"github.com/go-acme/lego/v5/cmd/internal/storage"
-	"github.com/go-acme/lego/v5/lego"
-	"github.com/go-acme/lego/v5/log"
-	"github.com/go-acme/lego/v5/registration"
-	"github.com/go-acme/lego/v5/registration/zerossl"
+	"github.com/metrica-pro/lego/v5/acme"
+	"github.com/metrica-pro/lego/v5/cmd/internal/configuration"
+	"github.com/metrica-pro/lego/v5/cmd/internal/prompt"
+	"github.com/metrica-pro/lego/v5/cmd/internal/storage"
+	"github.com/metrica-pro/lego/v5/lego"
+	"github.com/metrica-pro/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/registration"
+	"github.com/metrica-pro/lego/v5/registration/zerossl"
 )
 
 func handleRegistration(ctx context.Context, lazyClient lzSetUp, accountConfig *configuration.Account, accountsStorage *storage.AccountsStorage, account *storage.Account, allowRegister bool) error {

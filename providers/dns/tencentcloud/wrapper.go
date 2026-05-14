@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/go-acme/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
 	dnspod "github.com/go-acme/tencentclouddnspod/v20210323"
 	"github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common"
 	errorsdk "github.com/tencentcloud/tencentcloud-sdk-go/tencentcloud/common/errors"

@@ -9,10 +9,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/challenge/dns01"
-	"github.com/go-acme/lego/v5/internal/ptr"
-	"github.com/go-acme/lego/v5/platform/env"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/internal/ptr"
+	"github.com/metrica-pro/lego/v5/platform/env"
 	"github.com/volcengine/volc-sdk-golang/base"
 	volc "github.com/volcengine/volc-sdk-golang/service/dns"
 )

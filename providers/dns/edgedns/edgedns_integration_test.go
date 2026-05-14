@@ -7,7 +7,7 @@ import (
 
 	edgegriddns "github.com/akamai/AkamaiOPEN-edgegrid-golang/v13/pkg/dns"
 	"github.com/akamai/AkamaiOPEN-edgegrid-golang/v13/pkg/session"
-	"github.com/go-acme/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

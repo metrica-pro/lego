@@ -13,7 +13,7 @@ Lego can be used as a Go Library.
 
 ## GoDoc
 
-The GoDoc can be found here: [Go Reference](https://pkg.go.dev/github.com/go-acme/lego/v5).
+The GoDoc can be found here: [Go Reference](https://pkg.go.dev/github.com/metrica-pro/lego/v5).
 
 ## Usage
 
@@ -31,13 +31,13 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/go-acme/lego/v5/acme"
-	"github.com/go-acme/lego/v5/certcrypto"
-	"github.com/go-acme/lego/v5/certificate"
-	"github.com/go-acme/lego/v5/challenge/http01"
-	"github.com/go-acme/lego/v5/challenge/tlsalpn01"
-	"github.com/go-acme/lego/v5/lego"
-	"github.com/go-acme/lego/v5/registration"
+	"github.com/metrica-pro/lego/v5/acme"
+	"github.com/metrica-pro/lego/v5/certcrypto"
+	"github.com/metrica-pro/lego/v5/certificate"
+	"github.com/metrica-pro/lego/v5/challenge/http01"
+	"github.com/metrica-pro/lego/v5/challenge/tlsalpn01"
+	"github.com/metrica-pro/lego/v5/lego"
+	"github.com/metrica-pro/lego/v5/registration"
 )
 
 // You'll need a user or account type that implements acme.User

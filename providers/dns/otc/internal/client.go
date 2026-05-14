@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
 )
 
 type Client struct {

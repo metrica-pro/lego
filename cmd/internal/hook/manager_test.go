@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-acme/lego/v5/certcrypto"
-	"github.com/go-acme/lego/v5/certificate"
-	"github.com/go-acme/lego/v5/cmd/internal/storage"
+	"github.com/metrica-pro/lego/v5/certcrypto"
+	"github.com/metrica-pro/lego/v5/certificate"
+	"github.com/metrica-pro/lego/v5/cmd/internal/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

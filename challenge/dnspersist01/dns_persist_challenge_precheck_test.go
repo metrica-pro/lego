@@ -3,7 +3,7 @@ package dnspersist01
 import (
 	"testing"
 
-	"github.com/go-acme/lego/v5/internal/tester/dnsmock"
+	"github.com/metrica-pro/lego/v5/internal/tester/dnsmock"
 	"github.com/miekg/dns"
 	"github.com/stretchr/testify/assert"
 )

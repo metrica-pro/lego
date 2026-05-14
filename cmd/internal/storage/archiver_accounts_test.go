@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/go-acme/lego/v5/certcrypto"
-	"github.com/go-acme/lego/v5/cmd/internal/configuration"
+	"github.com/metrica-pro/lego/v5/certcrypto"
+	"github.com/metrica-pro/lego/v5/cmd/internal/configuration"
 	"github.com/mattn/go-zglob"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

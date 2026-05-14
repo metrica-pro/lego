@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/go-acme/lego/v5/challenge"
-	"github.com/go-acme/lego/v5/challenge/dns01"
-	"github.com/go-acme/lego/v5/platform/env"
+	"github.com/metrica-pro/lego/v5/challenge"
+	"github.com/metrica-pro/lego/v5/challenge/dns01"
+	"github.com/metrica-pro/lego/v5/platform/env"
 	"github.com/miekg/dns"
 	dpfapi "github.com/mimuret/golang-iij-dpf/pkg/api"
 	dpfapiutils "github.com/mimuret/golang-iij-dpf/pkg/apiutils"

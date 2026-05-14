@@ -7,12 +7,12 @@ import (
 	"io/fs"
 	"sync"
 
-	"github.com/go-acme/lego/v5/certcrypto"
-	"github.com/go-acme/lego/v5/cmd/internal/flags"
-	"github.com/go-acme/lego/v5/cmd/internal/storage"
-	"github.com/go-acme/lego/v5/internal/dotenv"
-	"github.com/go-acme/lego/v5/lego"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/certcrypto"
+	"github.com/metrica-pro/lego/v5/cmd/internal/flags"
+	"github.com/metrica-pro/lego/v5/cmd/internal/storage"
+	"github.com/metrica-pro/lego/v5/internal/dotenv"
+	"github.com/metrica-pro/lego/v5/lego"
+	"github.com/metrica-pro/lego/v5/log"
 	"github.com/urfave/cli/v3"
 )
 

@@ -10,8 +10,8 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/go-acme/lego/v5/internal/errutils"
-	"github.com/go-acme/lego/v5/internal/useragent"
+	"github.com/metrica-pro/lego/v5/internal/errutils"
+	"github.com/metrica-pro/lego/v5/internal/useragent"
 )
 
 const defaultBaseURL = "https://www.tele3.cz/acme/"

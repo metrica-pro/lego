@@ -9,11 +9,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/go-acme/lego/v5/cmd/internal/configuration"
-	"github.com/go-acme/lego/v5/cmd/internal/flags"
-	"github.com/go-acme/lego/v5/cmd/internal/migrate"
-	"github.com/go-acme/lego/v5/cmd/internal/prompt"
-	"github.com/go-acme/lego/v5/log"
+	"github.com/metrica-pro/lego/v5/cmd/internal/configuration"
+	"github.com/metrica-pro/lego/v5/cmd/internal/flags"
+	"github.com/metrica-pro/lego/v5/cmd/internal/migrate"
+	"github.com/metrica-pro/lego/v5/cmd/internal/prompt"
+	"github.com/metrica-pro/lego/v5/log"
 	"github.com/urfave/cli/v3"
 	"gopkg.in/yaml.v3"
 )
