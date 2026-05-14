@@ -13,6 +13,7 @@ import (
 
 	"github.com/go-acme/lego/v5/internal/errutils"
 	"github.com/go-acme/lego/v5/internal/useragent"
+	"github.com/go-acme/lego/v5/log"
 )
 
 // Default poll cadence and timeout for asynchronous Cloud.ru operations.
@@ -125,9 +126,14 @@ func (c *Client) attempt(ctx context.Context, method, endpoint string, rawBody [
 	}
 
 	// Retry once on 401: server rejected our token. Drop the cache so the
-	// next newRequest fetches a fresh one.
+	// next newRequest fetches a fresh one. Log a truncated body at debug
+	// level so operators can see IAM-side reasons (e.g. "key revoked") when
+	// the second attempt still fails.
 	if resp.StatusCode == http.StatusUnauthorized && attempt == 0 {
+		log.Debugf(log.LazySprintf("cloudruevolution: %s %s → 401, refreshing token (body: %q)",
+			req.Method, req.URL.Path, truncate(body, 256)))
 		c.identity.invalidate()
+
 		return true, nil
 	}
 
@@ -243,6 +249,16 @@ func parseAPIError(body []byte, status int) *APIError {
 func IsAlreadyExists(err error) bool {
 	var apiErr *APIError
 	return errors.As(err, &apiErr) && apiErr.Code == ErrCodeAlreadyExists
+}
+
+// truncate returns body cut to at most n bytes, with a "…" indicator when
+// truncated. Used for short debug log excerpts.
+func truncate(body []byte, n int) string {
+	if len(body) <= n {
+		return string(body)
+	}
+
+	return string(body[:n]) + "…"
 }
 
 // IsNotFound reports whether err is a Cloud.ru "not found" / "precondition"

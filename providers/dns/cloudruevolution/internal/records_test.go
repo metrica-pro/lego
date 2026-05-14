@@ -246,7 +246,7 @@ func TestClient_WaitForOperation_Timeout(t *testing.T) {
 
 	_, err := c.WaitForOperation(t.Context(), "op-slow")
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "time limit exceeded")
+	assert.Contains(t, err.Error(), "timeout")
 }
 
 func TestClient_GetRecord(t *testing.T) {

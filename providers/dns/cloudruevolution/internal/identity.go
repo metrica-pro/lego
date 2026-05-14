@@ -20,6 +20,22 @@ import (
 // less than this duration, getToken refreshes it eagerly.
 const tokenRefreshThreshold = 60 * time.Second
 
+// refreshThresholdFor picks a refresh margin that never exceeds half the
+// reported expires_in. With expires_in=30s this returns 15s, so cached
+// tokens still get reused across rapid-fire callers rather than every
+// getToken hitting IAM.
+func refreshThresholdFor(expiresIn time.Duration) time.Duration {
+	if expiresIn <= 0 {
+		return tokenRefreshThreshold
+	}
+
+	if half := expiresIn / 2; half < tokenRefreshThreshold {
+		return half
+	}
+
+	return tokenRefreshThreshold
+}
+
 // identity holds the credentials and the cached bearer token.
 // Access is guarded by RWMutex so concurrent callers can share a valid token
 // without serializing on the IAM endpoint.
@@ -46,30 +62,40 @@ func newIdentity(keyID, secret string, authURL *url.URL, httpClient *http.Client
 // tokenRefreshThreshold of expiry.
 func (i *identity) getToken(ctx context.Context) (*Token, error) {
 	i.mu.RLock()
+	cached := i.token
+	i.mu.RUnlock()
 
-	if i.token.Valid(tokenRefreshThreshold) {
+	if cached.usableThreshold() {
+		return cached, nil
+	}
+
+	i.mu.Lock()
+	// Double-check after acquiring the write lock.
+	if i.token.usableThreshold() {
 		tok := i.token
-		i.mu.RUnlock()
+		i.mu.Unlock()
 
 		return tok, nil
 	}
+	i.mu.Unlock()
 
-	i.mu.RUnlock()
-
-	i.mu.Lock()
-	defer i.mu.Unlock()
-
-	// Double-check after acquiring the write lock.
-	if i.token.Valid(tokenRefreshThreshold) {
-		return i.token, nil
-	}
-
+	// Release the lock while doing the HTTP roundtrip; concurrent callers
+	// may end up performing redundant refreshes under heavy contention, but
+	// readers are never blocked on the IAM endpoint.
 	tok, err := i.obtainToken(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	i.token = tok
+	i.mu.Lock()
+	// Another caller may have populated a newer token in the meantime; keep
+	// whichever expires later.
+	if i.token == nil || tok.ExpiresAt.After(i.token.ExpiresAt) {
+		i.token = tok
+	} else {
+		tok = i.token
+	}
+	i.mu.Unlock()
 
 	return tok, nil
 }
@@ -133,6 +159,11 @@ func (i *identity) obtainToken(ctx context.Context) (*Token, error) {
 		expiresIn = 3600
 	}
 
+	// Cloud.ru's IAM normally returns ExpiresIn=3600 but a misconfiguration
+	// or a short-lived test token can produce something well below the
+	// refresh threshold. Without clamping every getToken would issue a fresh
+	// POST and effectively DoS the IAM endpoint when many challenges fire in
+	// parallel. Pick a refresh threshold equal to half the TTL.
 	tok.ExpiresAt = time.Now().Add(time.Duration(expiresIn) * time.Second)
 
 	return &tok, nil

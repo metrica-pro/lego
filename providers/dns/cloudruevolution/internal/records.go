@@ -102,15 +102,31 @@ func (c *Client) DeleteRecord(ctx context.Context, recordID string) (*Operation,
 
 // CreateRecordAndWait posts a new record and blocks until the resulting
 // operation finishes. Returns the resourceId of the freshly created record.
+//
+// On wait timeout / context cancellation the partial Operation envelope is
+// returned alongside the error so the caller can still see the resourceId
+// and either retry or schedule a CleanUp — the record may have been
+// committed server-side after the wait deadline expired.
 func (c *Client) CreateRecordAndWait(ctx context.Context, req CreateRecordRequest) (string, error) {
 	op, err := c.CreateRecord(ctx, req)
 	if err != nil {
 		return "", err
 	}
 
-	final, err := c.WaitForOperation(ctx, op.ID)
-	if err != nil {
-		return "", err
+	final, waitErr := c.WaitForOperation(ctx, op.ID)
+	if waitErr != nil {
+		// Surface the resourceId from whichever envelope is non-nil so the
+		// orchestrator can resume cleanup against the stranded record.
+		stranded := op.ResourceID
+		if final != nil && final.ResourceID != "" {
+			stranded = final.ResourceID
+		}
+
+		if stranded != "" {
+			return stranded, fmt.Errorf("create record %s: %w", stranded, waitErr)
+		}
+
+		return "", waitErr
 	}
 
 	return final.ResourceID, nil

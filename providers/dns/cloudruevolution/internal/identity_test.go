@@ -148,9 +148,12 @@ func TestIdentity_getToken_RefreshAfterInvalidate(t *testing.T) {
 	assert.Equal(t, int32(2), calls.Load(), "invalidate must force refresh")
 }
 
-func TestIdentity_getToken_PrefetchNearExpiry(t *testing.T) {
+func TestIdentity_getToken_ScaledThresholdReusesShortTokens(t *testing.T) {
+	// With expires_in=30s the refresh threshold scales to 15s (half), so
+	// the cached token is reused rather than every getToken hitting the
+	// IAM endpoint — this is the IAM-DoS protection.
 	var calls atomic.Int32
-	// expires_in is short — within the 60s prefetch threshold.
+
 	srv := fakeIAMServer(t, "short", 30, &calls)
 	id := newTestIdentity(t, srv)
 
@@ -159,11 +162,29 @@ func TestIdentity_getToken_PrefetchNearExpiry(t *testing.T) {
 	assert.Equal(t, "short", first.AccessToken)
 	assert.Equal(t, int32(1), calls.Load())
 
-	// Subsequent call must refresh because token is within threshold.
 	second, err := id.getToken(t.Context())
 	require.NoError(t, err)
-	assert.NotSame(t, first, second)
-	assert.Equal(t, int32(2), calls.Load())
+	assert.Same(t, first, second, "short-lived token must still be cached")
+	assert.Equal(t, int32(1), calls.Load(), "no extra IAM call")
+}
+
+func TestIdentity_getToken_RefreshesNearExpiry(t *testing.T) {
+	// expires_in=1s → threshold=500ms. After ~600ms the token must be
+	// refreshed.
+	var calls atomic.Int32
+
+	srv := fakeIAMServer(t, "tiny", 1, &calls)
+	id := newTestIdentity(t, srv)
+
+	_, err := id.getToken(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, int32(1), calls.Load())
+
+	time.Sleep(600 * time.Millisecond)
+
+	_, err = id.getToken(t.Context())
+	require.NoError(t, err)
+	assert.Equal(t, int32(2), calls.Load(), "must refresh once threshold crossed")
 }
 
 func TestToken_Valid(t *testing.T) {

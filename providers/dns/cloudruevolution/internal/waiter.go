@@ -5,8 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-
-	legowait "github.com/go-acme/lego/v5/internal/wait"
+	"time"
 )
 
 // GetOperation fetches the current state of an asynchronous operation.
@@ -20,11 +19,10 @@ func (c *Client) GetOperation(ctx context.Context, opID string) (*Operation, err
 }
 
 // WaitForOperation polls /v1/operations/{id} every OperationPollInterval until
-// the operation's Done flag flips to true or OperationTimeout elapses.
-//
-// The returned Operation is the final state. If the operation failed remotely
-// (op.Error != nil) the function still returns the Operation along with a
-// non-nil error so the caller can inspect the resourceId.
+// the operation's Done flag flips to true, OperationTimeout elapses, or ctx
+// is canceled. The returned Operation is the final state observed; on
+// remote failure (op.Error != nil) the operation is returned alongside a
+// non-nil error so the caller can recover op.ResourceID for cleanup.
 func (c *Client) WaitForOperation(ctx context.Context, opID string) (*Operation, error) {
 	if opID == "" {
 		return nil, errors.New("waitForOperation: empty operation id")
@@ -40,29 +38,41 @@ func (c *Client) WaitForOperation(ctx context.Context, opID string) (*Operation,
 		interval = DefaultOperationPollInterval
 	}
 
-	var result *Operation
+	deadline := time.Now().Add(timeout)
 
-	err := legowait.For(timeout, interval, func() (bool, error) {
+	ticker := time.NewTicker(interval)
+	defer ticker.Stop()
+
+	var lastOp *Operation
+
+	for {
 		op, err := c.GetOperation(ctx, opID)
 		if err != nil {
-			return false, err
+			return lastOp, err
 		}
 
-		if !op.Done {
-			return false, nil
-		}
+		lastOp = op
 
-		result = op
+		// Cloud.ru may emit a terminal error before flipping Done. Short-
+		// circuit so the caller observes the failure promptly.
 		if op.Error != nil {
-			return true, fmt.Errorf("operation %s failed: code=%d %s",
+			return op, fmt.Errorf("operation %s failed: code=%d %s",
 				opID, op.Error.Code, op.Error.Message)
 		}
 
-		return true, nil
-	})
-	if err != nil {
-		return result, err
-	}
+		if op.Done {
+			return op, nil
+		}
 
-	return result, nil
+		if time.Now().After(deadline) {
+			return op, fmt.Errorf("operation %s: timeout after %s (last state: done=%v)",
+				opID, timeout, op.Done)
+		}
+
+		select {
+		case <-ctx.Done():
+			return op, fmt.Errorf("operation %s: context canceled: %w", opID, ctx.Err())
+		case <-ticker.C:
+		}
+	}
 }

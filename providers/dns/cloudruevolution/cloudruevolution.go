@@ -17,6 +17,7 @@ import (
 
 	"github.com/go-acme/lego/v5/challenge"
 	"github.com/go-acme/lego/v5/challenge/dns01"
+	"github.com/go-acme/lego/v5/log"
 	"github.com/go-acme/lego/v5/platform/env"
 	"github.com/go-acme/lego/v5/providers/dns/cloudruevolution/internal"
 	"github.com/go-acme/lego/v5/providers/dns/internal/clientdebug"
@@ -35,6 +36,7 @@ const (
 	EnvPollingInterval    = envNamespace + "POLLING_INTERVAL"
 	EnvHTTPTimeout        = envNamespace + "HTTP_TIMEOUT"
 	EnvOperationTimeout   = envNamespace + "OPERATION_TIMEOUT"
+	EnvSequenceInterval   = envNamespace + "SEQUENCE_INTERVAL"
 	EnvAPIEndpoint        = envNamespace + "API_ENDPOINT"
 	EnvAuthEndpoint       = envNamespace + "AUTH_ENDPOINT"
 )
@@ -60,6 +62,7 @@ type Config struct {
 	PropagationTimeout time.Duration
 	PollingInterval    time.Duration
 	OperationTimeout   time.Duration
+	SequenceInterval   time.Duration
 	HTTPClient         *http.Client
 }
 
@@ -72,7 +75,8 @@ func NewDefaultConfig() *Config {
 		TTL:                env.GetOrDefaultInt(EnvTTL, dns01.DefaultTTL),
 		PropagationTimeout: env.GetOrDefaultSecond(EnvPropagationTimeout, 5*time.Minute),
 		PollingInterval:    env.GetOrDefaultSecond(EnvPollingInterval, 5*time.Second),
-		OperationTimeout:   env.GetOrDefaultSecond(EnvOperationTimeout, 2*time.Minute),
+		OperationTimeout:   env.GetOrDefaultSecond(EnvOperationTimeout, 5*time.Minute),
+		SequenceInterval:   env.GetOrDefaultSecond(EnvSequenceInterval, dns01.DefaultPropagationTimeout),
 		HTTPClient: &http.Client{
 			Timeout: env.GetOrDefaultSecond(EnvHTTPTimeout, 30*time.Second),
 		},
@@ -142,7 +146,8 @@ func NewDNSProviderConfig(config *Config) (*DNSProvider, error) {
 		client.HTTPClient = config.HTTPClient
 	}
 
-	client.HTTPClient = clientdebug.Wrap(client.HTTPClient)
+	client.HTTPClient = clientdebug.Wrap(client.HTTPClient,
+		clientdebug.WithValues(config.KeyID, config.Secret))
 
 	if config.PollingInterval > 0 {
 		client.OperationPollInterval = config.PollingInterval
@@ -189,7 +194,13 @@ func (d *DNSProvider) presentForZone(ctx context.Context, authZone string, info 
 			dns01.UnFqdn(authZone), d.config.ProjectID)
 	}
 
-	relName := relativeName(info.EffectiveFQDN, authZone)
+	relName, err := relativeName(info.EffectiveFQDN, authZone)
+	if err != nil {
+		return fmt.Errorf("cloudruevolution: %w", err)
+	}
+
+	log.Infof(log.LazySprintf("cloudruevolution: Present zone=%s fqdn=%s rel=%q",
+		zone.Domain, info.EffectiveFQDN, relName))
 
 	recordID, err := d.upsertTXT(ctx, zone.ID, relName, info.Value)
 	if err != nil {
@@ -203,55 +214,80 @@ func (d *DNSProvider) presentForZone(ctx context.Context, authZone string, info 
 	return nil
 }
 
+// upsertMaxRetries bounds how many times upsertTXT will re-read the rrset
+// when racing against a concurrent writer. The Cloud.ru API has no
+// optimistic-concurrency primitive (no ETag / If-Match), so the only safe
+// strategy is read-modify-write with bounded retry; combined with
+// Sequential() on the provider level real-world contention is rare.
+const upsertMaxRetries = 5
+
 // upsertTXT either creates a new TXT rrset or merges value into the existing
 // one. A 409 from CreateRecord triggers the merge path (covers races between
 // two parallel Present calls for the same _acme-challenge label).
 func (d *DNSProvider) upsertTXT(ctx context.Context, zoneID, name, value string) (string, error) {
-	existing, err := d.client.FindTXTRecord(ctx, zoneID, name)
-	if err != nil {
-		return "", fmt.Errorf("list records: %w", err)
-	}
-
-	if existing == nil {
-		recordID, err := d.client.CreateRecordAndWait(ctx, internal.CreateRecordRequest{
-			PublicZoneID: zoneID,
-			Name:         name,
-			Type:         internal.RecordTypeTXT,
-			Values:       []string{value},
-			TTL:          d.config.TTL,
-		})
-		if err == nil {
-			return recordID, nil
-		}
-
-		if !internal.IsAlreadyExists(err) {
-			return "", fmt.Errorf("create record: %w", err)
-		}
-
-		// Lost the race; refetch and fall through to the merge path.
-		existing, err = d.client.FindTXTRecord(ctx, zoneID, name)
+	for attempt := range upsertMaxRetries {
+		existing, err := d.client.FindTXTRecord(ctx, zoneID, name)
 		if err != nil {
-			return "", fmt.Errorf("refetch after 409: %w", err)
+			return "", fmt.Errorf("list records: %w", err)
 		}
 
 		if existing == nil {
-			return "", errors.New("create returned 409 but record disappeared")
+			recordID, createErr := d.client.CreateRecordAndWait(ctx, internal.CreateRecordRequest{
+				PublicZoneID: zoneID,
+				Name:         name,
+				Type:         internal.RecordTypeTXT,
+				Values:       []string{value},
+				TTL:          d.config.TTL,
+			})
+			if createErr == nil {
+				log.Infof(log.LazySprintf("cloudruevolution: created TXT %s in zone %s (record=%s)",
+					name, zoneID, recordID))
+
+				return recordID, nil
+			}
+
+			err = createErr
+			if !internal.IsAlreadyExists(err) {
+				return "", fmt.Errorf("create record: %w", err)
+			}
+
+			log.Infof(log.LazySprintf("cloudruevolution: TXT %s in zone %s already exists, switching to merge",
+				name, zoneID))
+
+			continue
 		}
+
+		if slices.Contains(existing.Values, value) {
+			log.Infof(log.LazySprintf("cloudruevolution: TXT %s in zone %s already carries the value, no-op",
+				name, zoneID))
+
+			return existing.ID, nil
+		}
+
+		merged := append(append([]string{}, existing.Values...), value)
+
+		err = d.client.UpdateRecordAndWait(ctx, existing.ID, internal.UpdateRecordRequest{
+			Values: merged,
+			TTL:    d.config.TTL,
+		})
+		if err == nil {
+			log.Infof(log.LazySprintf("cloudruevolution: merged TXT %s in zone %s (record=%s, values=%d)",
+				name, zoneID, existing.ID, len(merged)))
+
+			return existing.ID, nil
+		}
+
+		// If another writer raced us (their PATCH/Create landed first),
+		// re-read and retry. Otherwise propagate.
+		if !internal.IsAlreadyExists(err) {
+			return "", fmt.Errorf("update record: %w", err)
+		}
+
+		log.Infof(log.LazySprintf("cloudruevolution: concurrent writer on TXT %s in zone %s, retry %d/%d",
+			name, zoneID, attempt+1, upsertMaxRetries))
 	}
 
-	if slices.Contains(existing.Values, value) {
-		return existing.ID, nil
-	}
-
-	merged := append(append([]string{}, existing.Values...), value)
-	if err := d.client.UpdateRecordAndWait(ctx, existing.ID, internal.UpdateRecordRequest{
-		Values: merged,
-		TTL:    d.config.TTL,
-	}); err != nil {
-		return "", fmt.Errorf("update record: %w", err)
-	}
-
-	return existing.ID, nil
+	return "", fmt.Errorf("upsertTXT %s in zone %s: lost race after %d retries", name, zoneID, upsertMaxRetries)
 }
 
 // CleanUp removes the value Present added; if the rrset becomes empty it is
@@ -282,7 +318,15 @@ func (d *DNSProvider) cleanupForZone(ctx context.Context, authZone string, info 
 		return nil // Nothing to clean up.
 	}
 
-	recordID, value, err := d.resolveCleanupTarget(ctx, zone.ID, relativeName(info.EffectiveFQDN, authZone), info.Value, token)
+	relName, err := relativeName(info.EffectiveFQDN, authZone)
+	if err != nil {
+		return fmt.Errorf("cloudruevolution: %w", err)
+	}
+
+	log.Infof(log.LazySprintf("cloudruevolution: CleanUp zone=%s fqdn=%s rel=%q",
+		zone.Domain, info.EffectiveFQDN, relName))
+
+	recordID, value, err := d.resolveCleanupTarget(ctx, zone.ID, relName, info.Value, token)
 	if err != nil {
 		return err
 	}
@@ -360,20 +404,23 @@ func (d *DNSProvider) removeValueFromRecord(ctx context.Context, recordID, value
 // For an apex challenge (e.g. _acme-challenge.example.com on zone example.com)
 // the result is "_acme-challenge"; for a wildcard challenge over the apex it
 // is "". The Cloud.ru API requires zone-relative names without trailing dots.
-func relativeName(fqdn, authZone string) string {
+// Returns an error when fqdn is not under authZone — this should not happen
+// after FindZoneByFqdn, but guards against passing a wrong name down to the
+// API.
+func relativeName(fqdn, authZone string) (string, error) {
 	host := strings.TrimSuffix(fqdn, ".")
-
 	zone := strings.TrimSuffix(authZone, ".")
+
 	if strings.EqualFold(host, zone) {
-		return ""
+		return "", nil
 	}
 
 	suffix := "." + zone
 	if strings.HasSuffix(strings.ToLower(host), strings.ToLower(suffix)) {
-		return host[:len(host)-len(suffix)]
+		return host[:len(host)-len(suffix)], nil
 	}
 
-	return host
+	return "", fmt.Errorf("fqdn %q is not under zone %q", fqdn, authZone)
 }
 
 // filterOut returns a new slice with all occurrences of target removed.
@@ -387,6 +434,16 @@ func filterOut(values []string, target string) []string {
 	}
 
 	return out
+}
+
+// Sequential reports that lego must drain each DNS-01 challenge before
+// starting the next one for the same provider instance. The Cloud.ru API
+// exposes no optimistic-concurrency primitive (no ETag / If-Match), so two
+// parallel Present calls writing to the same _acme-challenge rrset can
+// race on the read-modify-write path. Serializing at the lego level is the
+// safest fix for the wildcard-plus-apex SAN case.
+func (d *DNSProvider) Sequential() time.Duration {
+	return d.config.SequenceInterval
 }
 
 // Timeout returns the timeout and interval used when checking for DNS propagation.

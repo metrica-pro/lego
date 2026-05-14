@@ -83,8 +83,14 @@ POST/PATCH/DELETE return `Operation{id, resourceId, done, error}` —
 `resourceId` is the freshly created/affected record id and is usable
 immediately, but the change is only durably applied after `done=true`. The
 client polls every `OperationPollInterval` (default 2s) until
-`OperationTimeout` (default 2min). Live ops settled in 10–60 s during
-empirical testing.
+`OperationTimeout` (default **5min** — chosen with safety margin over the
+10–60 s settle range observed in empirical testing). The waiter honours
+`ctx.Done()`; on context cancellation the call returns promptly with the
+last-known operation envelope. On wait timeout from a Create the partial
+Operation (carrying `resourceId`) is included in the error so callers can
+schedule a cleanup of a stranded record. The waiter short-circuits as soon
+as `op.Error` becomes non-nil — it does not wait for `done==true` before
+surfacing terminal failures.
 
 ### Error envelope (gRPC status semantics)
 
@@ -99,19 +105,36 @@ empirical testing.
 
 Cloud.ru stores a TXT label as **one rrset with an array of values**.
 A wildcard cert (`*.example.com` + `example.com`) makes lego issue two
-parallel Present calls for the same `_acme-challenge.example.com` label —
-the provider must PATCH-merge the new value into the existing rrset, not
+Present calls for the same `_acme-challenge.example.com` label — the
+provider must PATCH-merge the new value into the existing rrset, not
 attempt a second POST (which returns 409). On CleanUp the corresponding
 value is removed; the rrset is DELETEd only when the array empties.
+
+Cloud.ru exposes no optimistic-concurrency primitive (no ETag / If-Match)
+so concurrent writers would risk losing updates on a read-modify-write
+path. Two mitigations:
+
+1. `Sequential()` asks lego to drain each DNS-01 challenge before launching
+   the next on the same provider instance (default 60s — configurable via
+   `CLOUDRU_EVOLUTION_SEQUENCE_INTERVAL`).
+2. `upsertTXT` performs **bounded re-read+retry** on a conflict response
+   from PATCH (5 attempts).
 
 ## Token caching strategy
 
 Single `identity` per Client, guarded by `sync.RWMutex`:
 
-- RLock fast path when token is present and `time.Until(ExpiresAt) > 60s`.
-- Lock + double-check + refresh otherwise.
+- RLock fast path when token is present and within `refreshThresholdFor`
+  (default 60 s, but scaled to `expires_in/2` for tokens shorter than 2min
+  so a misconfigured IAM returning `expires_in=30` does not provoke a
+  refresh on every call).
+- Lock taken only for the brief moment of swapping the cached token; the
+  IAM HTTP roundtrip itself runs without holding any lock so readers are
+  never blocked behind a slow IAM.
 - `invalidate()` is called from the HTTP layer on 401 → next request
-  rebuilds with a fresh token; a single retry is attempted.
+  rebuilds with a fresh token; a single retry is attempted. The 401 body
+  is logged at debug level (truncated to 256 bytes) so operators can see
+  IAM-side reasons like "key revoked".
 
 ## Files used unchanged from lego v5 (cited at exact lines)
 
