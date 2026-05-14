@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -22,14 +21,11 @@ func tightTimingsClient(c *Client) {
 
 // newFakeServerMux is like newFakeServer but lets tests register multiple
 // path-specific handlers; the auth handler is mounted on /auth.
-func newFakeServerMux(t *testing.T) (*Client, *http.ServeMux, *atomic.Int32) {
+func newFakeServerMux(t *testing.T) (*Client, *http.ServeMux) {
 	t.Helper()
-
-	var authCalls atomic.Int32
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/auth", func(w http.ResponseWriter, _ *http.Request) {
-		authCalls.Add(1)
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"access_token": "tok-static",
@@ -53,15 +49,17 @@ func newFakeServerMux(t *testing.T) (*Client, *http.ServeMux, *atomic.Int32) {
 		OperationPollInterval: 5 * time.Millisecond,
 		OperationTimeout:      500 * time.Millisecond,
 	}
-	return c, mux, &authCalls
+
+	return c, mux
 }
 
 func TestClient_CreateRecord_SendsCorrectBody(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
 
 	mux.HandleFunc("/v1/publicRecordsSole", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPost, r.Method)
 		body, _ := io.ReadAll(r.Body)
+
 		var got CreateRecordRequest
 		require.NoError(t, json.Unmarshal(body, &got))
 
@@ -86,7 +84,7 @@ func TestClient_CreateRecord_SendsCorrectBody(t *testing.T) {
 }
 
 func TestClient_CreateRecord_DuplicateIsAPIError(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
 	mux.HandleFunc("/v1/publicRecordsSole", func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusConflict)
 		w.Header().Set("Content-Type", "application/json")
@@ -101,7 +99,7 @@ func TestClient_CreateRecord_DuplicateIsAPIError(t *testing.T) {
 }
 
 func TestClient_DeleteRecord_HappyPath(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
 	mux.HandleFunc("/v1/publicRecordsSole/rec-1", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodDelete, r.Method)
 		w.Header().Set("Content-Type", "application/json")
@@ -114,7 +112,7 @@ func TestClient_DeleteRecord_HappyPath(t *testing.T) {
 }
 
 func TestClient_DeleteRecordAndWait_NotFoundIsSuccess(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
 	mux.HandleFunc("/v1/publicRecordsSole/rec-x", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusBadRequest)
@@ -125,10 +123,11 @@ func TestClient_DeleteRecordAndWait_NotFoundIsSuccess(t *testing.T) {
 }
 
 func TestClient_UpdateRecord_PATCH(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
 	mux.HandleFunc("/v1/publicRecordsSole/rec-7", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, http.MethodPatch, r.Method)
 		body, _ := io.ReadAll(r.Body)
+
 		var u UpdateRecordRequest
 		require.NoError(t, json.Unmarshal(body, &u))
 		assert.Equal(t, []string{"a", "b"}, u.Values)
@@ -144,11 +143,14 @@ func TestClient_UpdateRecord_PATCH(t *testing.T) {
 }
 
 func TestClient_ListRecords_FollowsPagination(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
+
 	var calls atomic.Int32
+
 	mux.HandleFunc("/v1/publicRecordsSole", func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "z-1", r.URL.Query().Get("publicZoneId"))
 		w.Header().Set("Content-Type", "application/json")
+
 		switch calls.Add(1) {
 		case 1:
 			_ = json.NewEncoder(w).Encode(ListRecordsResponse{
@@ -157,6 +159,7 @@ func TestClient_ListRecords_FollowsPagination(t *testing.T) {
 			})
 		default:
 			assert.Equal(t, "page2", r.URL.Query().Get("pageToken"))
+
 			_ = json.NewEncoder(w).Encode(ListRecordsResponse{
 				Records: []PublicRecord{{ID: "r2"}, {ID: "r3"}},
 			})
@@ -169,7 +172,7 @@ func TestClient_ListRecords_FollowsPagination(t *testing.T) {
 }
 
 func TestClient_FindTXTRecord(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
 	mux.HandleFunc("/v1/publicRecordsSole", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(ListRecordsResponse{
@@ -192,12 +195,14 @@ func TestClient_FindTXTRecord(t *testing.T) {
 }
 
 func TestClient_WaitForOperation_PollsUntilDone(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
 	tightTimingsClient(c)
 
 	var polls atomic.Int32
+
 	mux.HandleFunc("/v1/operations/op-1", func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
 		n := polls.Add(1)
 		done := n >= 3
 		_ = json.NewEncoder(w).Encode(Operation{ID: "op-1", ResourceID: "rec-1", Done: done})
@@ -212,7 +217,7 @@ func TestClient_WaitForOperation_PollsUntilDone(t *testing.T) {
 }
 
 func TestClient_WaitForOperation_ReturnsRemoteError(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
 	tightTimingsClient(c)
 
 	mux.HandleFunc("/v1/operations/op-err", func(w http.ResponseWriter, _ *http.Request) {
@@ -226,11 +231,11 @@ func TestClient_WaitForOperation_ReturnsRemoteError(t *testing.T) {
 	op, err := c.WaitForOperation(t.Context(), "op-err")
 	require.Error(t, err)
 	require.NotNil(t, op)
-	assert.True(t, strings.Contains(err.Error(), "code=9"), "got %q", err.Error())
+	assert.Contains(t, err.Error(), "code=9")
 }
 
 func TestClient_WaitForOperation_Timeout(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
 	c.OperationPollInterval = 5 * time.Millisecond
 	c.OperationTimeout = 50 * time.Millisecond
 
@@ -245,7 +250,7 @@ func TestClient_WaitForOperation_Timeout(t *testing.T) {
 }
 
 func TestClient_CreateRecordAndWait_ReturnsResourceID(t *testing.T) {
-	c, mux, _ := newFakeServerMux(t)
+	c, mux := newFakeServerMux(t)
 	tightTimingsClient(c)
 
 	mux.HandleFunc("/v1/publicRecordsSole", func(w http.ResponseWriter, _ *http.Request) {

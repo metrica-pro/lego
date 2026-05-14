@@ -15,6 +15,7 @@ func (c *Client) GetOperation(ctx context.Context, opID string) (*Operation, err
 	if err := c.do(ctx, http.MethodGet, "/v1/operations/"+opID, nil, nil, &op); err != nil {
 		return nil, fmt.Errorf("get operation %s: %w", opID, err)
 	}
+
 	return &op, nil
 }
 
@@ -33,29 +34,35 @@ func (c *Client) WaitForOperation(ctx context.Context, opID string) (*Operation,
 	if timeout <= 0 {
 		timeout = DefaultOperationTimeout
 	}
+
 	interval := c.OperationPollInterval
 	if interval <= 0 {
 		interval = DefaultOperationPollInterval
 	}
 
 	var result *Operation
+
 	err := legowait.For(timeout, interval, func() (bool, error) {
 		op, err := c.GetOperation(ctx, opID)
 		if err != nil {
 			return false, err
 		}
+
 		if !op.Done {
 			return false, nil
 		}
+
 		result = op
 		if op.Error != nil {
 			return true, fmt.Errorf("operation %s failed: code=%d %s",
 				opID, op.Error.Code, op.Error.Message)
 		}
+
 		return true, nil
 	})
 	if err != nil {
 		return result, err
 	}
+
 	return result, nil
 }

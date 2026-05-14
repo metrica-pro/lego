@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -21,7 +22,7 @@ const tokenRefreshThreshold = 60 * time.Second
 
 // identity holds the credentials and the cached bearer token.
 // Access is guarded by RWMutex so concurrent callers can share a valid token
-// without serialising on the IAM endpoint.
+// without serializing on the IAM endpoint.
 type identity struct {
 	keyID, secret string
 	authURL       *url.URL
@@ -45,11 +46,14 @@ func newIdentity(keyID, secret string, authURL *url.URL, httpClient *http.Client
 // tokenRefreshThreshold of expiry.
 func (i *identity) getToken(ctx context.Context) (*Token, error) {
 	i.mu.RLock()
+
 	if i.token.Valid(tokenRefreshThreshold) {
 		tok := i.token
 		i.mu.RUnlock()
+
 		return tok, nil
 	}
+
 	i.mu.RUnlock()
 
 	i.mu.Lock()
@@ -64,7 +68,9 @@ func (i *identity) getToken(ctx context.Context) (*Token, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	i.token = tok
+
 	return tok, nil
 }
 
@@ -89,6 +95,7 @@ func (i *identity) obtainToken(ctx context.Context) (*Token, error) {
 	if err != nil {
 		return nil, fmt.Errorf("auth: new request: %w", err)
 	}
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	useragent.SetHeader(req.Header)
@@ -97,6 +104,7 @@ func (i *identity) obtainToken(ctx context.Context) (*Token, error) {
 	if err != nil {
 		return nil, errutils.NewHTTPDoError(req, err)
 	}
+
 	defer func() { _ = resp.Body.Close() }()
 
 	respBody, err := io.ReadAll(resp.Body)
@@ -114,8 +122,9 @@ func (i *identity) obtainToken(ctx context.Context) (*Token, error) {
 	if err := json.Unmarshal(respBody, &tok); err != nil {
 		return nil, errutils.NewUnmarshalError(req, resp.StatusCode, respBody, err)
 	}
+
 	if tok.AccessToken == "" {
-		return nil, fmt.Errorf("auth: empty access_token in response")
+		return nil, errors.New("auth: empty access_token in response")
 	}
 
 	expiresIn := tok.ExpiresIn
@@ -123,6 +132,8 @@ func (i *identity) obtainToken(ctx context.Context) (*Token, error) {
 		// Fall back to a conservative one-hour TTL if the IAM payload omits it.
 		expiresIn = 3600
 	}
+
 	tok.ExpiresAt = time.Now().Add(time.Duration(expiresIn) * time.Second)
+
 	return &tok, nil
 }

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
-	"strings"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -60,6 +59,7 @@ func fakeIAMServer(t *testing.T, accessToken string, expiresIn int, counter *ato
 
 func TestIdentity_obtainToken_Success(t *testing.T) {
 	var calls atomic.Int32
+
 	srv := fakeIAMServer(t, "tok-A", 3600, &calls)
 	id := newTestIdentity(t, srv)
 
@@ -99,7 +99,7 @@ func TestIdentity_obtainToken_EmptyToken(t *testing.T) {
 
 	_, err := id.obtainToken(t.Context())
 	require.Error(t, err)
-	assert.True(t, strings.Contains(err.Error(), "empty access_token"), "got %q", err.Error())
+	assert.Contains(t, err.Error(), "empty access_token")
 }
 
 func TestIdentity_obtainToken_MalformedJSON(t *testing.T) {
@@ -117,6 +117,7 @@ func TestIdentity_obtainToken_MalformedJSON(t *testing.T) {
 
 func TestIdentity_getToken_CachesResult(t *testing.T) {
 	var calls atomic.Int32
+
 	srv := fakeIAMServer(t, "cached", 3600, &calls)
 	id := newTestIdentity(t, srv)
 
@@ -132,6 +133,7 @@ func TestIdentity_getToken_CachesResult(t *testing.T) {
 
 func TestIdentity_getToken_RefreshAfterInvalidate(t *testing.T) {
 	var calls atomic.Int32
+
 	srv := fakeIAMServer(t, "tok", 3600, &calls)
 	id := newTestIdentity(t, srv)
 

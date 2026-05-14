@@ -74,6 +74,7 @@ func TestNewDNSProvider(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.desc, func(t *testing.T) {
 			defer envTest.RestoreEnv()
+
 			envTest.ClearEnv()
 			envTest.Apply(tc.envVars)
 
@@ -84,8 +85,10 @@ func TestNewDNSProvider(t *testing.T) {
 				require.NotNil(t, p)
 				require.NotNil(t, p.config)
 				require.NotNil(t, p.client)
+
 				return
 			}
+
 			require.EqualError(t, err, tc.expected)
 		})
 	}
@@ -183,6 +186,7 @@ func newMockEvolutionDNS(t *testing.T, zoneName string) *mockEvolutionDNS {
 
 	m.srv = httptest.NewServer(mux)
 	t.Cleanup(m.srv.Close)
+
 	return m
 }
 
@@ -200,10 +204,12 @@ func (m *mockEvolutionDNS) handleZones(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
 	if r.URL.Query().Get("projectId") != m.projectID {
 		http.Error(w, "wrong project", http.StatusBadRequest)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(internal.ListZonesResponse{
 		Zones: []internal.PublicZone{{
@@ -223,7 +229,9 @@ func (m *mockEvolutionDNS) handleRecords(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "wrong zone", http.StatusBadRequest)
 			return
 		}
+
 		m.mu.Lock()
+
 		recs := make([]internal.PublicRecord, 0, len(m.records))
 		for _, rec := range m.records {
 			recs = append(recs, *rec)
@@ -234,6 +242,7 @@ func (m *mockEvolutionDNS) handleRecords(w http.ResponseWriter, r *http.Request)
 
 	case http.MethodPost:
 		body, _ := io.ReadAll(r.Body)
+
 		var req internal.CreateRecordRequest
 		if err := json.Unmarshal(body, &req); err != nil {
 			http.Error(w, "bad body", http.StatusBadRequest)
@@ -243,14 +252,17 @@ func (m *mockEvolutionDNS) handleRecords(w http.ResponseWriter, r *http.Request)
 		// with the same name+type cannot exist twice.
 		m.mu.Lock()
 		for _, rec := range m.records {
-			if rec.Name == req.Name && rec.Type == req.Type {
-				m.mu.Unlock()
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusConflict)
-				_, _ = w.Write([]byte(`{"code":6,"message":"already exists"}`))
-				return
+			if rec.Name != req.Name || rec.Type != req.Type {
+				continue
 			}
+			m.mu.Unlock()
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusConflict)
+			_, _ = w.Write([]byte(`{"code":6,"message":"already exists"}`))
+
+			return
 		}
+
 		m.nextID++
 		id := "rec-" + intToString(m.nextID)
 		m.records[id] = &internal.PublicRecord{
@@ -276,27 +288,34 @@ func (m *mockEvolutionDNS) handleRecordByID(w http.ResponseWriter, r *http.Reque
 		m.mu.Lock()
 		rec, ok := m.records[id]
 		m.mu.Unlock()
+
 		if !ok {
 			m.replyNotFound(w)
 			return
 		}
+
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(rec)
 
 	case http.MethodPatch:
 		body, _ := io.ReadAll(r.Body)
+
 		var req internal.UpdateRecordRequest
 		if err := json.Unmarshal(body, &req); err != nil {
 			http.Error(w, "bad body", http.StatusBadRequest)
 			return
 		}
+
 		m.mu.Lock()
+
 		rec, ok := m.records[id]
 		if !ok {
 			m.mu.Unlock()
 			m.replyNotFound(w)
+
 			return
 		}
+
 		rec.Values = append([]string{}, req.Values...)
 		if req.TTL > 0 {
 			rec.TTL = req.TTL
@@ -306,12 +325,15 @@ func (m *mockEvolutionDNS) handleRecordByID(w http.ResponseWriter, r *http.Reque
 
 	case http.MethodDelete:
 		m.mu.Lock()
+
 		_, ok := m.records[id]
 		if !ok {
 			m.mu.Unlock()
 			m.replyNotFound(w)
+
 			return
 		}
+
 		delete(m.records, id)
 		m.mu.Unlock()
 		m.replyOp(w, id, "delete")
@@ -323,16 +345,20 @@ func (m *mockEvolutionDNS) handleRecordByID(w http.ResponseWriter, r *http.Reque
 
 func (m *mockEvolutionDNS) handleOperation(w http.ResponseWriter, r *http.Request) {
 	opID := r.URL.Path[len("/v1/operations/"):]
+
 	m.mu.Lock()
+
 	op, ok := m.pendingOps[opID]
 	if ok {
 		op.Done = true
 	}
 	m.mu.Unlock()
+
 	if !ok {
 		http.NotFound(w, r)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	_ = json.NewEncoder(w).Encode(op)
 }
@@ -358,10 +384,12 @@ func (m *mockEvolutionDNS) replyNotFound(w http.ResponseWriter) {
 func (m *mockEvolutionDNS) listRecords() []internal.PublicRecord {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+
 	out := make([]internal.PublicRecord, 0, len(m.records))
 	for _, r := range m.records {
 		out = append(out, *r)
 	}
+
 	return out
 }
 
@@ -370,13 +398,16 @@ func intToString(i int) string {
 	if i == 0 {
 		return "0"
 	}
+
 	var b [20]byte
+
 	pos := len(b)
 	for i > 0 {
 		pos--
 		b[pos] = byte('0' + i%10)
 		i /= 10
 	}
+
 	return string(b[pos:])
 }
 
@@ -396,6 +427,7 @@ func newMockedProvider(t *testing.T, m *mockEvolutionDNS) *DNSProvider {
 
 	p, err := NewDNSProviderConfig(cfg)
 	require.NoError(t, err)
+
 	return p
 }
 

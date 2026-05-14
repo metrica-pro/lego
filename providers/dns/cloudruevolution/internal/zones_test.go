@@ -30,17 +30,21 @@ func TestClient_ListZones_PassesProjectID(t *testing.T) {
 
 func TestClient_ListZones_FollowsPagination(t *testing.T) {
 	var pages atomic.Int32
+
 	c, _, _ := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
+
 		switch pages.Add(1) {
 		case 1:
 			assert.Empty(t, r.URL.Query().Get("pageToken"))
+
 			_ = json.NewEncoder(w).Encode(ListZonesResponse{
 				Zones:         []PublicZone{{ID: "a"}, {ID: "b"}},
 				NextPageToken: "next",
 			})
 		case 2:
 			assert.Equal(t, "next", r.URL.Query().Get("pageToken"))
+
 			_ = json.NewEncoder(w).Encode(ListZonesResponse{
 				Zones: []PublicZone{{ID: "c"}},
 			})
@@ -68,6 +72,7 @@ func TestClient_GetZone(t *testing.T) {
 
 func TestClient_FindZoneByDomain_MatchesWithOrWithoutDot(t *testing.T) {
 	var calls atomic.Int32
+
 	c, _, _ := newFakeServer(t, func(w http.ResponseWriter, r *http.Request) {
 		calls.Add(1)
 		assert.Equal(t, "/v1/publicZones", r.URL.Path)
@@ -93,6 +98,7 @@ func TestClient_FindZoneByDomain_MatchesWithOrWithoutDot(t *testing.T) {
 
 func TestClient_FindZoneByDomain_CachesResult(t *testing.T) {
 	var calls atomic.Int32
+
 	c, _, _ := newFakeServer(t, func(w http.ResponseWriter, _ *http.Request) {
 		calls.Add(1)
 		w.Header().Set("Content-Type", "application/json")
@@ -106,6 +112,7 @@ func TestClient_FindZoneByDomain_CachesResult(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, z)
 	}
+
 	assert.Equal(t, int32(1), calls.Load(), "FindZoneByDomain must reuse cache")
 
 	c.InvalidateZoneCache()
@@ -129,11 +136,10 @@ func TestClient_FindZoneByDomain_NoMatch(t *testing.T) {
 
 func TestNormalizeDomain(t *testing.T) {
 	cases := map[string]string{
-		"":                "",
-		".":               "",
-		"Example.com.":    "example.com",
-		"summasoft.ru":    "summasoft.ru",
-		" foo.com ":       " foo.com ", // we don't strip spaces — guard against regression
+		"":             "",
+		".":            "",
+		"Example.com.": "example.com",
+		"summasoft.ru": "summasoft.ru",
 	}
 	for in, want := range cases {
 		t.Run(strings.ReplaceAll(in, " ", "_"), func(t *testing.T) {

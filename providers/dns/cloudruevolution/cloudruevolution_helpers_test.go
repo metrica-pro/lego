@@ -48,7 +48,7 @@ func TestFilterOut(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			got := filterOut(tc.in, tc.target)
-			assert.Equal(t, tc.wantLen, len(got))
+			assert.Len(t, got, tc.wantLen)
 			assert.Equal(t, tc.want, got)
 		})
 	}
