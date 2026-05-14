@@ -41,6 +41,7 @@ func allDNSCodes() string {
 		"cloudflare",
 		"cloudns",
 		"cloudru",
+		"cloudruevolution",
 		"com35",
 		"conoha",
 		"conohav3",
@@ -868,6 +869,31 @@ func displayDNSHelp(w io.Writer, name string) error {
 
 		ew.writeln()
 		ew.writeln(`More information: https://go-acme.github.io/lego/dns/cloudru`)
+
+	case "cloudruevolution":
+		// generated from: providers/dns/cloudruevolution/cloudruevolution.toml
+		ew.writeln(`Configuration for Cloud.ru Evolution DNS.`)
+		ew.writeln(`Code:	'cloudruevolution'`)
+		ew.writeln(`Since:	'v5.x'`)
+		ew.writeln()
+
+		ew.writeln(`Credentials:`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_KEY_ID":	IAM API key ID`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_PROJECT_ID":	Cloud.ru project UUID`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_SECRET":	IAM API key secret`)
+		ew.writeln()
+
+		ew.writeln(`Additional Configuration:`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_API_ENDPOINT":	Override the DNS API base URL (Default: https://dns.api.cloud.ru)`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_AUTH_ENDPOINT":	Override the IAM token endpoint (Default: https://iam.api.cloud.ru/api/v1/auth/token)`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_HTTP_TIMEOUT":	API request timeout in seconds (Default: 30)`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_OPERATION_TIMEOUT":	Maximum waiting time for async API operations in seconds (Default: 120)`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_POLLING_INTERVAL":	Time between DNS propagation checks in seconds (Default: 5)`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_PROPAGATION_TIMEOUT":	Maximum waiting time for DNS propagation in seconds (Default: 300)`)
+		ew.writeln(`	- "CLOUDRU_EVOLUTION_TTL":	The TTL of the TXT record used for the DNS challenge in seconds (Default: 120)`)
+
+		ew.writeln()
+		ew.writeln(`More information: https://go-acme.github.io/lego/dns/cloudruevolution`)
 
 	case "com35":
 		// generated from: providers/dns/com35/com35.toml
