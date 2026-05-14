@@ -10,6 +10,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
+	"strings"
 	"sync"
 	"time"
 
@@ -156,16 +158,192 @@ func NewDNSProviderConfig(config *Config) (*DNSProvider, error) {
 	}, nil
 }
 
-// Present creates a TXT record using the specified parameters.
-// Filled in a later commit (T6).
-func (d *DNSProvider) Present(_ context.Context, _, _, _ string) error {
-	return errors.New("cloudruevolution: Present not yet implemented")
+// Present creates (or appends to) the TXT record for the ACME DNS-01 challenge.
+//
+// Wildcard certificates request both the apex and the *-prefixed name, which
+// resolve to the same _acme-challenge label. In that case the provider must
+// merge the new value into the existing rrset, not POST a second record.
+func (d *DNSProvider) Present(ctx context.Context, domain, token, keyAuth string) error {
+	info := dns01.GetChallengeInfo(ctx, domain, keyAuth)
+
+	authZone, err := dns01.DefaultClient().FindZoneByFqdn(ctx, info.EffectiveFQDN)
+	if err != nil {
+		return fmt.Errorf("cloudruevolution: could not find zone for domain %q: %w", domain, err)
+	}
+
+	zone, err := d.client.FindZoneByDomain(ctx, authZone)
+	if err != nil {
+		return fmt.Errorf("cloudruevolution: lookup zone for %q: %w", authZone, err)
+	}
+	if zone == nil {
+		return fmt.Errorf("cloudruevolution: zone %q not found in project %s",
+			dns01.UnFqdn(authZone), d.config.ProjectID)
+	}
+
+	relName := relativeName(info.EffectiveFQDN, authZone)
+
+	recordID, err := d.upsertTXT(ctx, zone.ID, relName, info.Value)
+	if err != nil {
+		return fmt.Errorf("cloudruevolution: present %s: %w", info.EffectiveFQDN, err)
+	}
+
+	d.recordsMu.Lock()
+	d.records[token] = recordState{recordID: recordID, value: info.Value}
+	d.recordsMu.Unlock()
+	return nil
 }
 
-// CleanUp removes the TXT record that Present created.
-// Filled in a later commit (T6).
-func (d *DNSProvider) CleanUp(_ context.Context, _, _, _ string) error {
-	return errors.New("cloudruevolution: CleanUp not yet implemented")
+// upsertTXT either creates a new TXT rrset or merges value into the existing
+// one. A 409 from CreateRecord triggers the merge path (covers races between
+// two parallel Present calls for the same _acme-challenge label).
+func (d *DNSProvider) upsertTXT(ctx context.Context, zoneID, name, value string) (string, error) {
+	existing, err := d.client.FindTXTRecord(ctx, zoneID, name)
+	if err != nil {
+		return "", fmt.Errorf("list records: %w", err)
+	}
+
+	if existing == nil {
+		recordID, err := d.client.CreateRecordAndWait(ctx, internal.CreateRecordRequest{
+			PublicZoneID: zoneID,
+			Name:         name,
+			Type:         internal.RecordTypeTXT,
+			Values:       []string{value},
+			TTL:          d.config.TTL,
+		})
+		if err == nil {
+			return recordID, nil
+		}
+		if !internal.IsAlreadyExists(err) {
+			return "", fmt.Errorf("create record: %w", err)
+		}
+		// Lost the race; refetch and fall through to the merge path.
+		existing, err = d.client.FindTXTRecord(ctx, zoneID, name)
+		if err != nil {
+			return "", fmt.Errorf("refetch after 409: %w", err)
+		}
+		if existing == nil {
+			return "", errors.New("create returned 409 but record disappeared")
+		}
+	}
+
+	if slices.Contains(existing.Values, value) {
+		return existing.ID, nil
+	}
+
+	merged := append(append([]string{}, existing.Values...), value)
+	if err := d.client.UpdateRecordAndWait(ctx, existing.ID, internal.UpdateRecordRequest{
+		Values: merged,
+		TTL:    d.config.TTL,
+	}); err != nil {
+		return "", fmt.Errorf("update record: %w", err)
+	}
+	return existing.ID, nil
+}
+
+// CleanUp removes the value Present added; if the rrset becomes empty it is
+// deleted, otherwise it is patched to retain the remaining values.
+//
+// Lost-bookkeeping recovery: if the in-memory map does not know the recordID
+// (e.g. the process was restarted between Present and CleanUp) the rrset is
+// located by name within the zone.
+func (d *DNSProvider) CleanUp(ctx context.Context, domain, token, keyAuth string) error {
+	info := dns01.GetChallengeInfo(ctx, domain, keyAuth)
+
+	authZone, err := dns01.DefaultClient().FindZoneByFqdn(ctx, info.EffectiveFQDN)
+	if err != nil {
+		return fmt.Errorf("cloudruevolution: could not find zone for domain %q: %w", domain, err)
+	}
+
+	zone, err := d.client.FindZoneByDomain(ctx, authZone)
+	if err != nil {
+		return fmt.Errorf("cloudruevolution: lookup zone for %q: %w", authZone, err)
+	}
+	if zone == nil {
+		return nil // Nothing to clean up.
+	}
+	relName := relativeName(info.EffectiveFQDN, authZone)
+
+	d.recordsMu.Lock()
+	state, hasState := d.records[token]
+	if hasState {
+		delete(d.records, token)
+	}
+	d.recordsMu.Unlock()
+
+	var recordID, value string
+	if hasState {
+		recordID = state.recordID
+		value = state.value
+	} else {
+		value = info.Value
+	}
+
+	if recordID == "" {
+		existing, err := d.client.FindTXTRecord(ctx, zone.ID, relName)
+		if err != nil {
+			return fmt.Errorf("cloudruevolution: cleanup lookup: %w", err)
+		}
+		if existing == nil {
+			return nil
+		}
+		recordID = existing.ID
+	}
+
+	rec, err := d.client.GetRecord(ctx, recordID)
+	if err != nil {
+		if internal.IsNotFound(err) {
+			return nil
+		}
+		return fmt.Errorf("cloudruevolution: cleanup get %s: %w", recordID, err)
+	}
+
+	remaining := filterOut(rec.Values, value)
+
+	if len(remaining) == 0 {
+		if err := d.client.DeleteRecordAndWait(ctx, recordID); err != nil {
+			if internal.IsNotFound(err) {
+				return nil
+			}
+			return fmt.Errorf("cloudruevolution: delete %s: %w", recordID, err)
+		}
+		return nil
+	}
+
+	if err := d.client.UpdateRecordAndWait(ctx, recordID, internal.UpdateRecordRequest{
+		Values: remaining,
+		TTL:    rec.TTL,
+	}); err != nil {
+		return fmt.Errorf("cloudruevolution: cleanup patch %s: %w", recordID, err)
+	}
+	return nil
+}
+
+// relativeName strips the parent zone suffix from a fully-qualified host name.
+// For an apex challenge (e.g. _acme-challenge.example.com on zone example.com)
+// the result is "_acme-challenge"; for a wildcard challenge over the apex it
+// is "". The Cloud.ru API requires zone-relative names without trailing dots.
+func relativeName(fqdn, authZone string) string {
+	host := strings.TrimSuffix(fqdn, ".")
+	zone := strings.TrimSuffix(authZone, ".")
+	if strings.EqualFold(host, zone) {
+		return ""
+	}
+	suffix := "." + zone
+	if strings.HasSuffix(strings.ToLower(host), strings.ToLower(suffix)) {
+		return host[:len(host)-len(suffix)]
+	}
+	return host
+}
+
+// filterOut returns a new slice with all occurrences of target removed.
+func filterOut(values []string, target string) []string {
+	out := make([]string, 0, len(values))
+	for _, v := range values {
+		if v != target {
+			out = append(out, v)
+		}
+	}
+	return out
 }
 
 // Timeout returns the timeout and interval used when checking for DNS propagation.
