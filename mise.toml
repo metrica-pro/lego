@@ -1,0 +1,17 @@
+[tools]
+go = "1.26.5"
+
+# Thin wrappers over Makefile — single source of truth for recipes.
+
+[tasks.build]
+description = "Build"
+run = "make build"
+
+[tasks.test]
+description = "Test"
+run = "make test"
+
+[tasks.lint]
+description = "Lint"
+run = "make lint"
+

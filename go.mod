@@ -1,7 +1,6 @@
 module github.com/metrica-pro/lego/v5
 
-go 1.25.0
-
+go 1.26.5
 ignore (
 	./.github
 	./docs
