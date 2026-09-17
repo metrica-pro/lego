@@ -9,11 +9,16 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   cross:
     name: Go
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 30  # budget: warm p90 936s ×2
     env:
       CGO_ENABLED: 0
 

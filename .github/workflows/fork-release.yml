@@ -25,10 +25,15 @@ permissions:
   packages: write
   id-token: write
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   image:
     name: Build and push image to GHCR
     runs-on: ubuntu-latest
+    timeout-minutes: 30  # budget: warm p90 1845s ×2
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: ${{ github.repository }}

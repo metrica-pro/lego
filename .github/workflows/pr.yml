@@ -9,11 +9,16 @@ on:
 
 permissions: {}
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
 
   main:
     name: Main Process
     runs-on: ubuntu-latest
+    timeout-minutes: 20  # budget: warm p90 582s ×2
     env:
       GO_VERSION: stable
       GOLANGCI_LINT_VERSION: v2.12
