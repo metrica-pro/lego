@@ -5,11 +5,16 @@ on:
     tags:
       - v*
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
 
   release:
     name: Release version
     runs-on: ubuntu-latest
+    timeout-minutes: 15  # budget: no history, estimate
     permissions:
       contents: write
       packages: write
